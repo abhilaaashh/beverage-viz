@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beverage Category Dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            grid-template-rows: auto 1fr;
+            min-height: 100vh;
+            gap: 0;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-left h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-left .subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 8px 14px;
+            border-radius: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        select, input[type="text"] {
+            padding: 6px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .year-toggle {
+            display: flex;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .year-toggle button {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+
+        .year-toggle button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.9);
+            border-right: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 70px);
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .filter-item:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .filter-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .filter-item .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .filter-item span {
+            font-size: 0.85rem;
+            color: #475569;
+        }
+
+        .filter-item .count {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        .main-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chart-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            position: relative;
+            min-height: 600px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .chart-subtitle {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        #chart {
+            width: 100%;
+            height: calc(100% - 60px);
+        }
+
+        .summary-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-left: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 70px);
+        }
+
+        .summary-section {
+            margin-bottom: 24px;
+        }
+
+        .summary-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .stat-card .change {
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .stat-card .change.positive { color: #10b981; }
+        .stat-card .change.negative { color: #ef4444; }
+
+        .aggregate-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .aggregate-table th {
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .aggregate-table td {
+            padding: 10px 6px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .aggregate-table tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .aggregate-table tr:hover {
+            background: rgba(102, 126, 234, 0.08);
+        }
+
+        .aggregate-table tr.highlighted {
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .aggregate-table .bar-cell {
+            position: relative;
+        }
+
+        .aggregate-table .bar {
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 4px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            max-width: 300px;
+            z-index: 1000;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding-bottom: 8px;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            gap: 15px;
+        }
+
+        .tooltip-label {
+            color: #64748b;
+        }
+
+        .tooltip-value {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .tooltip-section {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #64748b;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .legend-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .legend-item.dimmed {
+            opacity: 0.4;
+        }
+
+        .legend-item .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .quadrant-label {
+            font-size: 11px;
+            font-weight: 600;
+            fill: rgba(0, 0, 0, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .axis-label {
+            font-size: 12px;
+            font-weight: 500;
+            fill: #475569;
+        }
+
+        .axis line, .axis path {
+            stroke: rgba(0, 0, 0, 0.15);
+        }
+
+        .axis text {
+            fill: #64748b;
+            font-size: 10px;
+        }
+
+        .bubble {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bubble:hover {
+            filter: brightness(1.1);
+        }
+
+        .bubble.dimmed {
+            opacity: 0.15;
+        }
+
+        .bubble.highlighted {
+            stroke: #1e293b;
+            stroke-width: 2px;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .zoom-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .zoom-btn:hover {
+            background: #f1f5f9;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .zoom-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .quadrant {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quadrant:hover {
+            filter: brightness(0.95);
+        }
+
+        .bubble-label {
+            font-size: 9px;
+            fill: rgba(0, 0, 0, 0.7);
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+        }
+
+        .toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #f1f5f9;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .chart-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            border-radius: 0;
+            margin: 0;
+            padding: 20px;
+            background: white;
+        }
+
+        .chart-container.fullscreen #chart {
+            height: calc(100vh - 140px);
+        }
+
+        .chart-container.fullscreen .chart-header {
+            margin-bottom: 10px;
+        }
+
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+        }
+
+        .fullscreen-overlay.visible {
+            display: block;
+        }
+
+        .quadrant-filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+
+        .quadrant-filter-badge .close-btn {
+            cursor: pointer;
+            opacity: 0.8;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .quadrant-filter-badge .close-btn:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 1400px) {
+            .dashboard {
+                grid-template-columns: 240px 1fr 280px;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto;
+            }
+            
+            .sidebar, .summary-panel {
+                max-height: none;
+                border: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <div class="header-left">
+                <h1>Beverage Category Dashboard</h1>
+                <p class="subtitle">2x2 Matrix Analysis — CAGR vs Engagement</p>
+            </div>
+            <div class="header-controls">
+                <div class="control-group">
+                    <label>View:</label>
+                    <select id="viewSelect">
+                        <option value="individual">All Subcategories</option>
+                        <option value="aggregate-needstate">Need States Overview</option>
+                        <option value="aggregate-fei">FEI Platforms Overview</option>
+                        <option value="aggregate-mc">Micro Categories Overview</option>
+                        <option value="drift-needstate">Need States Drift (2025→2028)</option>
+                        <option value="drift-fei">FEI Platforms Drift (2025→2028)</option>
+                        <option value="drift-mc">Micro Categories Drift (2025→2028)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Color by:</label>
+                    <select id="colorBySelect">
+                        <option value="needState">Need State</option>
+                        <option value="fei">FEI Platform</option>
+                        <option value="macroCategory">Macro Category</option>
+                        <option value="microCategory">Micro Category</option>
+                    </select>
+                </div>
+                <div class="control-group year-toggle">
+                    <button id="year2025" class="active">2025</button>
+                    <button id="year2028">2028</button>
+                </div>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <input type="text" class="search-box" id="searchBox" placeholder="Search subcategories...">
+            
+            <div class="sidebar-section" id="needStateFilters">
+                <h3>Filter by Need State</h3>
+                <div class="filter-group" id="needStateFilterGroup"></div>
+            </div>
+
+            <div class="sidebar-section" id="feiFilters">
+                <h3>Filter by FEI Platform</h3>
+                <div class="filter-group" id="feiFilterGroup"></div>
+            </div>
+
+            <div class="sidebar-section" id="macroFilters">
+                <h3>Filter by Macro Category</h3>
+                <div class="filter-group" id="macroFilterGroup"></div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div style="display: flex; align-items: center;">
+                        <div>
+                            <div class="chart-title">Category Positioning Matrix</div>
+                            <div class="chart-subtitle" id="chartSubtitle">Showing 90 subcategories</div>
+                        </div>
+                        <span id="quadrantBadge"></span>
+                    </div>
+                    <div class="zoom-controls" style="display: flex; gap: 8px; align-items: center;">
+                        <button class="toggle-btn" id="labelsToggle" title="Show Labels">
+                            <span>Labels</span>
+                        </button>
+                        <button class="zoom-btn" id="zoomOutBtn" title="Exit Quadrant View" disabled>−</button>
+                        <button class="zoom-btn" id="resetZoomBtn" title="Reset All">⟲</button>
+                        <button class="zoom-btn" id="fullscreenBtn" title="Fullscreen">⛶</button>
+                    </div>
+                </div>
+                <div id="chart"></div>
+                <div class="tooltip" id="tooltip"></div>
+                <div class="legend-container" id="legend"></div>
+            </div>
+            <div class="fullscreen-overlay" id="fullscreenOverlay"></div>
+        </main>
+
+        <aside class="summary-panel">
+            <div class="summary-section">
+                <h3>Overview</h3>
+                <div class="stat-card">
+                    <div class="label">Total Categories</div>
+                    <div class="value" id="totalCategories">90</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Total Engagement</div>
+                    <div class="value" id="totalEngagement">-</div>
+                    <div class="change" id="engagementChange"></div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Avg CAGR</div>
+                    <div class="value" id="avgCagr">-</div>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <h3 id="aggregateTitle">By Need State</h3>
+                <table class="aggregate-table" id="aggregateTable">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Engagement</th>
+                            <th>CAGR</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aggregateBody"></tbody>
+                </table>
+            </div>
+
+            <div class="summary-section">
+                <h3>Quadrant Distribution</h3>
+                <table class="aggregate-table" id="quadrantTable">
+                    <thead>
+                        <tr>
+                            <th>Quadrant</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quadrantBody"></tbody>
+                </table>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Color palettes
+        const colorPalettes = {
+            needState: {
+                'Enhance': '#3B82F6',
+                'Balance': '#14B8A6',
+                'Escape': '#8B5CF6',
+                'Refresh': '#22C55E',
+                'Fuel': '#F97316',
+                'Delight': '#EC4899'
+            },
+            fei: {
+                'Enchanting The Senses': '#8B5CF6',
+                'Hydration for Vitality': '#06B6D4',
+                'Hydration For Vitality': '#06B6D4',
+                'Targeted Health Support': '#10B981',
+                'Mood Mastery': '#F59E0B',
+                'Enhancing Wellspans': '#EF4444'
+            },
+            macroCategory: {
+                'Fruit Juices': '#EF4444',
+                'Traditional beverages': '#F97316',
+                'Flavored water': '#06B6D4',
+                'Non-fruit juices': '#84CC16',
+                'Tea': '#22C55E',
+                'Coffee': '#8B4513',
+                'Dairy-based beverages': '#FBBF24',
+                'Dairy-based Beverages': '#FBBF24',
+                'Energy drinks': '#EF4444',
+                'Sparkling soft drinks': '#A855F7',
+                'Plant-based Non-Dairy Beverages': '#14B8A6',
+                'Vitality Drinks': '#EC4899'
+            }
+        };
+
+        // Generate colors for micro categories
+        function generateMicroCategoryColors(categories) {
+            const colors = {};
+            const hueStep = 360 / Math.max(categories.length, 1);
+            categories.forEach((cat, i) => {
+                colors[cat] = `hsl(${i * hueStep}, 65%, 55%)`;
+            });
+            return colors;
+        }
+
+        // State
+        let masterData = [];
+        let needStateAggregates = [];
+        let feiAggregates = [];
+        let mcAggregates = [];
+        let currentYear = '2025';
+        let colorBy = 'needState';
+        let filters = {
+            needState: new Set(),
+            fei: new Set(),
+            macroCategory: new Set(),
+            search: ''
+        };
+        let highlightedGroup = null;
+        let microCategoryColors = {};
+        let showLabels = false;
+        let quadrantFilter = null;
+        let isFullscreen = false;
+        let storedMedianCagr = 50;
+        let storedMedianEng = 150;
+
+        // Parse CSV data
+        function parseCSV(csvText, hasHeader = true) {
+            const lines = csvText.trim().split('\n');
+            const headers = hasHeader ? lines[0].split('\t').map(h => h.trim()) : null;
+            const data = [];
+            
+            for (let i = hasHeader ? 1 : 0; i < lines.length; i++) {
+                const values = lines[i].split('\t').map(v => v.trim());
+                if (hasHeader) {
+                    const row = {};
+                    headers.forEach((h, j) => {
+                        row[h] = values[j] || '';
+                    });
+                    data.push(row);
+                } else {
+                    data.push(values);
+                }
+            }
+            return { headers, data };
+        }
+
+        // Parse master data
+        function parseMasterData(csvText) {
+            const { data } = parseCSV(csvText);
+            return data.map(row => {
+                const eng2025 = parseFloat(row['Engagement (2025)']) || 0;
+                const eng2028 = parseFloat(row['Engagement (2028)']) || 0;
+                const cagr2025 = parseFloat(String(row['CAGR (2025)']).replace('%', '')) || 0;
+                const cagr2028 = parseFloat(String(row['CAGR (2028)']).replace('%', '')) || 0;
+                
+                return {
+                    macroCategory: row['Macro Category'] || '',
+                    subcategory: row['Subcategory'] || '',
+                    engagement2025: eng2025,
+                    cagr2025: cagr2025,
+                    engagement2028: eng2028,
+                    cagr2028: cagr2028,
+                    needState: row['Key Need Space'] || row['Need State (Allocated)'] || '',
+                    feiPlatform: row['Platform'] || '',
+                    microCategory: row['Micro Category'] || '',
+                    opportunitySpace: row['Opportunity Space'] || '',
+                    whitespaceIdea: row['Whitespace Idea'] || ''
+                };
+            }).filter(d => d.subcategory);
+        }
+
+        // Get current values based on year
+        function getCurrentValues(d) {
+            if (currentYear === '2025') {
+                return { engagement: d.engagement2025, cagr: d.cagr2025 };
+            }
+            return { engagement: d.engagement2028, cagr: d.cagr2028 };
+        }
+
+        // Get color for data point
+        function getColor(d) {
+            let value, palette;
+            switch (colorBy) {
+                case 'needState':
+                    value = d.needState;
+                    palette = colorPalettes.needState;
+                    break;
+                case 'fei':
+                    value = d.feiPlatform;
+                    palette = colorPalettes.fei;
+                    break;
+                case 'macroCategory':
+                    value = d.macroCategory;
+                    palette = colorPalettes.macroCategory;
+                    break;
+                case 'microCategory':
+                    value = d.microCategory;
+                    palette = microCategoryColors;
+                    break;
+                default:
+                    return '#667eea';
+            }
+            return palette[value] || '#94a3b8';
+        }
+
+        // Filter data
+        function getFilteredData() {
+            let data = masterData.filter(d => {
+                if (filters.needState.size > 0 && !filters.needState.has(d.needState)) return false;
+                if (filters.fei.size > 0 && !filters.fei.has(d.feiPlatform)) return false;
+                if (filters.macroCategory.size > 0 && !filters.macroCategory.has(d.macroCategory)) return false;
+                if (filters.search && !d.subcategory.toLowerCase().includes(filters.search.toLowerCase())) return false;
+                return true;
+            });
+            
+            if (quadrantFilter) {
+                data = data.filter(d => {
+                    const vals = getCurrentValues(d);
+                    switch (quadrantFilter) {
+                        case 'STARS':
+                            return vals.engagement >= storedMedianEng && vals.cagr >= storedMedianCagr;
+                        case 'MATURE':
+                            return vals.engagement >= storedMedianEng && vals.cagr < storedMedianCagr;
+                        case 'EMERGING':
+                            return vals.engagement < storedMedianEng && vals.cagr >= storedMedianCagr;
+                        case 'DECLINING':
+                            return vals.engagement < storedMedianEng && vals.cagr < storedMedianCagr;
+                        default:
+                            return true;
+                    }
+                });
+            }
+            
+            return data;
+        }
+
+        // Create the chart
+        let svg, xScale, yScale, width, height;
+        const margin = { top: 40, right: 40, bottom: 60, left: 70 };
+
+        function createChart() {
+            const container = document.getElementById('chart');
+            const rect = container.getBoundingClientRect();
+            width = rect.width - margin.left - margin.right;
+            height = rect.height - margin.top - margin.bottom;
+
+            d3.select('#chart').selectAll('*').remove();
+
+            svg = d3.select('#chart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Clip path
+            svg.append('defs')
+                .append('clipPath')
+                .attr('id', 'chartClip')
+                .append('rect')
+                .attr('width', width)
+                .attr('height', height);
+
+            updateChart();
+        }
+
+        function updateChart() {
+            // Calculate medians from ALL data before filtering by quadrant
+            const allMasterVals = masterData.map(d => getCurrentValues(d));
+            storedMedianCagr = d3.median(allMasterVals, d => d.cagr) || 50;
+            storedMedianEng = d3.median(allMasterVals, d => d.engagement) || 150;
+            
+            const filteredData = getFilteredData();
+            
+            // Calculate domains
+            const allData = filteredData.map(d => getCurrentValues(d));
+            const engagementExtent = d3.extent(allData, d => d.engagement);
+            const cagrExtent = d3.extent(allData, d => d.cagr);
+            
+            // Add padding
+            const engPadding = (engagementExtent[1] - engagementExtent[0]) * 0.1 || 50;
+            const cagrPadding = (cagrExtent[1] - cagrExtent[0]) * 0.1 || 20;
+
+            xScale = d3.scaleLinear()
+                .domain([Math.min(cagrExtent[0] - cagrPadding, -30), Math.max(cagrExtent[1] + cagrPadding, 200)])
+                .range([0, width]);
+
+            yScale = d3.scaleLinear()
+                .domain([Math.min(engagementExtent[0] - engPadding, 0), engagementExtent[1] + engPadding])
+                .range([height, 0]);
+
+            // Use stored medians for quadrant display
+            const medianCagr = storedMedianCagr;
+            const medianEng = storedMedianEng;
+            
+            // Update quadrant badge
+            updateQuadrantBadge();
+
+            // Clear previous content
+            svg.selectAll('.quadrant, .quadrant-label, .axis, .bubble, .median-line, .bubble-label, .bubble-group').remove();
+
+            // Quadrant backgrounds
+            const quadrants = [
+                { x: 0, y: 0, w: xScale(medianCagr), h: yScale(medianEng), color: 'rgba(251, 191, 36, 0.12)', label: 'MATURE', labelX: xScale(medianCagr) / 2, labelY: 25 },
+                { x: xScale(medianCagr), y: 0, w: width - xScale(medianCagr), h: yScale(medianEng), color: 'rgba(16, 185, 129, 0.12)', label: 'STARS', labelX: xScale(medianCagr) + (width - xScale(medianCagr)) / 2, labelY: 25 },
+                { x: 0, y: yScale(medianEng), w: xScale(medianCagr), h: height - yScale(medianEng), color: 'rgba(148, 163, 184, 0.12)', label: 'DECLINING', labelX: xScale(medianCagr) / 2, labelY: height - 15 },
+                { x: xScale(medianCagr), y: yScale(medianEng), w: width - xScale(medianCagr), h: height - yScale(medianEng), color: 'rgba(59, 130, 246, 0.12)', label: 'EMERGING', labelX: xScale(medianCagr) + (width - xScale(medianCagr)) / 2, labelY: height - 15 }
+            ];
+
+            svg.selectAll('.quadrant')
+                .data(quadrants)
+                .enter()
+                .append('rect')
+                .attr('class', 'quadrant')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y)
+                .attr('width', d => Math.max(0, d.w))
+                .attr('height', d => Math.max(0, d.h))
+                .attr('fill', d => d.color)
+                .on('click', function(event, d) {
+                    if (!quadrantFilter) {
+                        quadrantFilter = d.label;
+                        document.getElementById('zoomOutBtn').disabled = false;
+                        updateChart();
+                        updateAggregateTable();
+                    }
+                });
+
+            // Quadrant labels
+            svg.selectAll('.quadrant-label')
+                .data(quadrants)
+                .enter()
+                .append('text')
+                .attr('class', 'quadrant-label')
+                .attr('x', d => d.labelX)
+                .attr('y', d => d.labelY)
+                .attr('text-anchor', 'middle')
+                .text(d => d.label);
+
+            // Median lines
+            svg.append('line')
+                .attr('class', 'median-line')
+                .attr('x1', xScale(medianCagr))
+                .attr('x2', xScale(medianCagr))
+                .attr('y1', 0)
+                .attr('y2', height)
+                .attr('stroke', 'rgba(0, 0, 0, 0.15)')
+                .attr('stroke-dasharray', '4,4');
+
+            svg.append('line')
+                .attr('class', 'median-line')
+                .attr('x1', 0)
+                .attr('x2', width)
+                .attr('y1', yScale(medianEng))
+                .attr('y2', yScale(medianEng))
+                .attr('stroke', 'rgba(0, 0, 0, 0.15)')
+                .attr('stroke-dasharray', '4,4');
+
+            // Axes
+            const xAxis = d3.axisBottom(xScale).ticks(10).tickFormat(d => d + '%');
+            const yAxis = d3.axisLeft(yScale).ticks(8);
+
+            svg.append('g')
+                .attr('class', 'axis x-axis')
+                .attr('transform', `translate(0,${height})`)
+                .call(xAxis);
+
+            svg.append('g')
+                .attr('class', 'axis y-axis')
+                .call(yAxis);
+
+            // Axis labels
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('x', width / 2)
+                .attr('y', height + 45)
+                .attr('text-anchor', 'middle')
+                .text('CAGR (%)');
+
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -50)
+                .attr('text-anchor', 'middle')
+                .text('Engagement (Millions)');
+
+            // Bubbles
+            const bubbleGroup = svg.append('g').attr('class', 'bubble-group').attr('clip-path', 'url(#chartClip)');
+            
+            const bubbles = bubbleGroup.selectAll('.bubble')
+                .data(filteredData)
+                .enter()
+                .append('circle')
+                .attr('class', 'bubble')
+                .attr('cx', d => xScale(getCurrentValues(d).cagr))
+                .attr('cy', d => yScale(getCurrentValues(d).engagement))
+                .attr('r', d => Math.max(5, Math.min(15, Math.sqrt(getCurrentValues(d).engagement) / 2)))
+                .attr('fill', d => getColor(d))
+                .attr('stroke', 'rgba(0,0,0,0.2)')
+                .attr('stroke-width', 1)
+                .attr('opacity', 0.85)
+                .classed('dimmed', d => highlightedGroup && getGroupValue(d) !== highlightedGroup)
+                .on('mouseenter', showTooltip)
+                .on('mousemove', moveTooltip)
+                .on('mouseleave', hideTooltip);
+
+            // Draw labels if enabled
+            if (showLabels) {
+                bubbleGroup.selectAll('.bubble-label')
+                    .data(filteredData)
+                    .enter()
+                    .append('text')
+                    .attr('class', 'bubble-label')
+                    .attr('x', d => xScale(getCurrentValues(d).cagr) + Math.max(5, Math.min(15, Math.sqrt(getCurrentValues(d).engagement) / 2)) + 3)
+                    .attr('y', d => yScale(getCurrentValues(d).engagement) + 3)
+                    .text(d => d.subcategory.length > 18 ? d.subcategory.substring(0, 18) + '...' : d.subcategory)
+                    .classed('dimmed', d => highlightedGroup && getGroupValue(d) !== highlightedGroup);
+            }
+
+            // Update subtitle
+            let subtitleText = `Showing ${filteredData.length} subcategories`;
+            if (quadrantFilter) {
+                subtitleText += ` in ${quadrantFilter} quadrant`;
+            }
+            document.getElementById('chartSubtitle').textContent = subtitleText;
+
+            // Update summary stats
+            updateSummaryStats(filteredData);
+            updateQuadrantDistribution(filteredData, medianCagr, medianEng);
+        }
+
+        function getGroupValue(d) {
+            switch (colorBy) {
+                case 'needState': return d.needState;
+                case 'fei': return d.feiPlatform;
+                case 'macroCategory': return d.macroCategory;
+                case 'microCategory': return d.microCategory;
+                default: return null;
+            }
+        }
+
+        // Tooltip functions
+        const tooltip = document.getElementById('tooltip');
+
+        function showTooltip(event, d) {
+            const vals = getCurrentValues(d);
+            const vals2025 = { engagement: d.engagement2025, cagr: d.cagr2025 };
+            const vals2028 = { engagement: d.engagement2028, cagr: d.cagr2028 };
+            const engChange = ((vals2028.engagement - vals2025.engagement) / vals2025.engagement * 100);
+            const changeClass = engChange >= 0 ? 'positive' : 'negative';
+
+            tooltip.innerHTML = `
+                <div class="tooltip-title">${d.subcategory}</div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Macro Category:</span>
+                    <span class="tooltip-value">${d.macroCategory}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Engagement (${currentYear}):</span>
+                    <span class="tooltip-value">${vals.engagement.toFixed(1)}M</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">CAGR (${currentYear}):</span>
+                    <span class="tooltip-value">${vals.cagr.toFixed(1)}%</span>
+                </div>
+                <div class="tooltip-section">
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Need State:</span>
+                        <span class="tooltip-value">${d.needState}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">FEI Platform:</span>
+                        <span class="tooltip-value">${d.feiPlatform}</span>
+                    </div>
+                </div>
+                <div class="tooltip-section">
+                    <div class="tooltip-row ${changeClass}">
+                        <span class="tooltip-label">2025→2028 Change:</span>
+                        <span class="tooltip-value">${engChange >= 0 ? '+' : ''}${engChange.toFixed(1)}%</span>
+                    </div>
+                </div>
+            `;
+            tooltip.classList.add('visible');
+        }
+
+        function moveTooltip(event) {
+            const container = document.querySelector('.chart-container');
+            const rect = container.getBoundingClientRect();
+            tooltip.style.left = (event.clientX - rect.left + 15) + 'px';
+            tooltip.style.top = (event.clientY - rect.top - 10) + 'px';
+        }
+
+        function hideTooltip() {
+            tooltip.classList.remove('visible');
+        }
+
+        // Update summary stats
+        function updateSummaryStats(data) {
+            const vals = data.map(d => getCurrentValues(d));
+            const totalEng = d3.sum(vals, d => d.engagement);
+            const avgCagr = d3.mean(vals, d => d.cagr);
+
+            document.getElementById('totalCategories').textContent = data.length;
+            document.getElementById('totalEngagement').textContent = totalEng.toFixed(0) + 'M';
+            document.getElementById('avgCagr').textContent = avgCagr.toFixed(1) + '%';
+
+            // Calculate change from 2025 to 2028
+            const total2025 = d3.sum(data, d => d.engagement2025);
+            const total2028 = d3.sum(data, d => d.engagement2028);
+            const change = ((total2028 - total2025) / total2025 * 100);
+            const changeEl = document.getElementById('engagementChange');
+            changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}% vs ${currentYear === '2025' ? '2028' : '2025'}`;
+            changeEl.className = 'change ' + (change >= 0 ? 'positive' : 'negative');
+        }
+
+        // Update quadrant distribution
+        function updateQuadrantDistribution(data, medianCagr, medianEng) {
+            const quadrants = { Stars: 0, Mature: 0, Emerging: 0, Declining: 0 };
+            
+            data.forEach(d => {
+                const vals = getCurrentValues(d);
+                if (vals.engagement >= medianEng && vals.cagr >= medianCagr) quadrants.Stars++;
+                else if (vals.engagement >= medianEng && vals.cagr < medianCagr) quadrants.Mature++;
+                else if (vals.engagement < medianEng && vals.cagr >= medianCagr) quadrants.Emerging++;
+                else quadrants.Declining++;
+            });
+
+            const tbody = document.getElementById('quadrantBody');
+            tbody.innerHTML = Object.entries(quadrants)
+                .map(([name, count]) => `
+                    <tr>
+                        <td>${name}</td>
+                        <td>${count}</td>
+                    </tr>
+                `).join('');
+        }
+
+        // Update aggregate table
+        function updateAggregateTable() {
+            const tbody = document.getElementById('aggregateBody');
+            const title = document.getElementById('aggregateTitle');
+            let aggregates = [];
+            let palette = {};
+
+            switch (colorBy) {
+                case 'needState':
+                    title.textContent = 'By Need State';
+                    palette = colorPalettes.needState;
+                    aggregates = Object.keys(palette).map(ns => {
+                        const items = masterData.filter(d => d.needState === ns);
+                        const vals = items.map(d => getCurrentValues(d));
+                        return {
+                            name: ns,
+                            engagement: d3.sum(vals, d => d.engagement),
+                            cagr: d3.mean(vals, d => d.cagr) || 0,
+                            count: items.length,
+                            color: palette[ns]
+                        };
+                    }).filter(a => a.count > 0);
+                    break;
+                case 'fei':
+                    title.textContent = 'By FEI Platform';
+                    palette = colorPalettes.fei;
+                    aggregates = Object.keys(palette).map(fei => {
+                        const items = masterData.filter(d => d.feiPlatform === fei || d.feiPlatform === fei.replace('for', 'For'));
+                        const vals = items.map(d => getCurrentValues(d));
+                        return {
+                            name: fei,
+                            engagement: d3.sum(vals, d => d.engagement),
+                            cagr: d3.mean(vals, d => d.cagr) || 0,
+                            count: items.length,
+                            color: palette[fei]
+                        };
+                    }).filter(a => a.count > 0);
+                    break;
+                case 'macroCategory':
+                    title.textContent = 'By Macro Category';
+                    palette = colorPalettes.macroCategory;
+                    const macros = [...new Set(masterData.map(d => d.macroCategory))];
+                    aggregates = macros.map(mc => {
+                        const items = masterData.filter(d => d.macroCategory === mc);
+                        const vals = items.map(d => getCurrentValues(d));
+                        return {
+                            name: mc,
+                            engagement: d3.sum(vals, d => d.engagement),
+                            cagr: d3.mean(vals, d => d.cagr) || 0,
+                            count: items.length,
+                            color: palette[mc] || '#94a3b8'
+                        };
+                    });
+                    break;
+                case 'microCategory':
+                    title.textContent = 'Top Micro Categories';
+                    const micros = [...new Set(masterData.map(d => d.microCategory).filter(m => m))];
+                    aggregates = micros.map(mc => {
+                        const items = masterData.filter(d => d.microCategory === mc);
+                        const vals = items.map(d => getCurrentValues(d));
+                        return {
+                            name: mc,
+                            engagement: d3.sum(vals, d => d.engagement),
+                            cagr: d3.mean(vals, d => d.cagr) || 0,
+                            count: items.length,
+                            color: microCategoryColors[mc] || '#94a3b8'
+                        };
+                    }).sort((a, b) => b.engagement - a.engagement).slice(0, 15);
+                    break;
+            }
+
+            const maxEng = d3.max(aggregates, a => a.engagement) || 1;
+
+            tbody.innerHTML = aggregates.map(a => `
+                <tr data-group="${a.name}" class="${highlightedGroup === a.name ? 'highlighted' : ''}">
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="color-dot" style="background: ${a.color}; width: 10px; height: 10px; border-radius: 50%;"></div>
+                            <span>${a.name.length > 20 ? a.name.substring(0, 20) + '...' : a.name}</span>
+                        </div>
+                    </td>
+                    <td class="bar-cell">
+                        ${a.engagement.toFixed(0)}M
+                        <div class="bar" style="width: ${(a.engagement / maxEng * 100)}%; background: ${a.color};"></div>
+                    </td>
+                    <td>${a.cagr.toFixed(1)}%</td>
+                </tr>
+            `).join('');
+
+            // Add click handlers for highlighting
+            tbody.querySelectorAll('tr').forEach(row => {
+                row.addEventListener('click', () => {
+                    const group = row.dataset.group;
+                    if (highlightedGroup === group) {
+                        highlightedGroup = null;
+                    } else {
+                        highlightedGroup = group;
+                    }
+                    updateChart();
+                    updateAggregateTable();
+                    updateLegend();
+                });
+            });
+        }
+
+        // Update legend
+        function updateLegend() {
+            const legend = document.getElementById('legend');
+            let items = [];
+            let palette = {};
+
+            switch (colorBy) {
+                case 'needState':
+                    palette = colorPalettes.needState;
+                    break;
+                case 'fei':
+                    palette = colorPalettes.fei;
+                    break;
+                case 'macroCategory':
+                    palette = colorPalettes.macroCategory;
+                    break;
+                case 'microCategory':
+                    const micros = [...new Set(masterData.map(d => d.microCategory).filter(m => m))];
+                    palette = {};
+                    micros.slice(0, 10).forEach(m => {
+                        palette[m] = microCategoryColors[m];
+                    });
+                    break;
+            }
+
+            legend.innerHTML = Object.entries(palette).map(([name, color]) => `
+                <div class="legend-item ${highlightedGroup && highlightedGroup !== name ? 'dimmed' : ''}" data-group="${name}">
+                    <div class="dot" style="background: ${color};"></div>
+                    <span>${name.length > 25 ? name.substring(0, 25) + '...' : name}</span>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            legend.querySelectorAll('.legend-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const group = item.dataset.group;
+                    if (highlightedGroup === group) {
+                        highlightedGroup = null;
+                    } else {
+                        highlightedGroup = group;
+                    }
+                    updateChart();
+                    updateAggregateTable();
+                    updateLegend();
+                });
+            });
+        }
+
+        // Create filter checkboxes
+        function createFilters() {
+            // Need State filters
+            const needStates = [...new Set(masterData.map(d => d.needState).filter(n => n))];
+            const needStateGroup = document.getElementById('needStateFilterGroup');
+            needStateGroup.innerHTML = needStates.map(ns => {
+                const count = masterData.filter(d => d.needState === ns).length;
+                return `
+                    <label class="filter-item">
+                        <input type="checkbox" data-filter="needState" value="${ns}">
+                        <div class="color-dot" style="background: ${colorPalettes.needState[ns] || '#94a3b8'}"></div>
+                        <span>${ns}</span>
+                        <span class="count">${count}</span>
+                    </label>
+                `;
+            }).join('');
+
+            // FEI filters
+            const feiPlatforms = [...new Set(masterData.map(d => d.feiPlatform).filter(f => f))];
+            const feiGroup = document.getElementById('feiFilterGroup');
+            feiGroup.innerHTML = feiPlatforms.map(fei => {
+                const count = masterData.filter(d => d.feiPlatform === fei).length;
+                return `
+                    <label class="filter-item">
+                        <input type="checkbox" data-filter="fei" value="${fei}">
+                        <div class="color-dot" style="background: ${colorPalettes.fei[fei] || '#94a3b8'}"></div>
+                        <span>${fei.length > 20 ? fei.substring(0, 20) + '...' : fei}</span>
+                        <span class="count">${count}</span>
+                    </label>
+                `;
+            }).join('');
+
+            // Macro Category filters
+            const macros = [...new Set(masterData.map(d => d.macroCategory).filter(m => m))];
+            const macroGroup = document.getElementById('macroFilterGroup');
+            macroGroup.innerHTML = macros.map(mc => {
+                const count = masterData.filter(d => d.macroCategory === mc).length;
+                return `
+                    <label class="filter-item">
+                        <input type="checkbox" data-filter="macroCategory" value="${mc}">
+                        <div class="color-dot" style="background: ${colorPalettes.macroCategory[mc] || '#94a3b8'}"></div>
+                        <span>${mc.length > 20 ? mc.substring(0, 20) + '...' : mc}</span>
+                        <span class="count">${count}</span>
+                    </label>
+                `;
+            }).join('');
+
+            // Add event listeners
+            document.querySelectorAll('[data-filter]').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    const filterType = e.target.dataset.filter;
+                    const value = e.target.value;
+                    
+                    if (e.target.checked) {
+                        filters[filterType].add(value);
+                    } else {
+                        filters[filterType].delete(value);
+                    }
+                    
+                    updateChart();
+                });
+            });
+        }
+
+        // Event listeners
+        document.getElementById('viewSelect').addEventListener('change', async (e) => {
+            currentView = e.target.value;
+            const yearToggle = document.querySelector('.year-toggle');
+            
+            if (currentView.startsWith('drift-')) {
+                yearToggle.style.display = 'none';
+            } else {
+                yearToggle.style.display = 'flex';
+            }
+            
+            await refreshView();
+        });
+        
+        document.getElementById('colorBySelect').addEventListener('change', (e) => {
+            colorBy = e.target.value;
+            highlightedGroup = null;
+            updateChart();
+            updateAggregateTable();
+            updateLegend();
+        });
+
+        document.getElementById('year2025').addEventListener('click', async () => {
+            currentYear = '2025';
+            document.getElementById('year2025').classList.add('active');
+            document.getElementById('year2028').classList.remove('active');
+            await refreshView();
+        });
+
+        document.getElementById('year2028').addEventListener('click', async () => {
+            currentYear = '2028';
+            document.getElementById('year2028').classList.add('active');
+            document.getElementById('year2025').classList.remove('active');
+            await refreshView();
+            updateAggregateTable();
+        });
+
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            filters.search = e.target.value;
+            updateChart();
+        });
+
+        document.getElementById('resetZoomBtn').addEventListener('click', () => {
+            highlightedGroup = null;
+            quadrantFilter = null;
+            filters.needState.clear();
+            filters.fei.clear();
+            filters.macroCategory.clear();
+            filters.search = '';
+            document.getElementById('searchBox').value = '';
+            document.querySelectorAll('[data-filter]').forEach(cb => cb.checked = false);
+            document.getElementById('zoomOutBtn').disabled = true;
+            updateChart();
+            updateAggregateTable();
+            updateLegend();
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            if (quadrantFilter) {
+                quadrantFilter = null;
+                document.getElementById('zoomOutBtn').disabled = true;
+                updateChart();
+                updateAggregateTable();
+            }
+        });
+
+        // Labels toggle
+        document.getElementById('labelsToggle').addEventListener('click', () => {
+            showLabels = !showLabels;
+            document.getElementById('labelsToggle').classList.toggle('active', showLabels);
+            updateChart();
+        });
+
+        // Fullscreen toggle
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            isFullscreen = !isFullscreen;
+            const container = document.querySelector('.chart-container');
+            const overlay = document.getElementById('fullscreenOverlay');
+            
+            if (isFullscreen) {
+                container.classList.add('fullscreen');
+                overlay.classList.add('visible');
+                document.getElementById('fullscreenBtn').textContent = '✕';
+            } else {
+                container.classList.remove('fullscreen');
+                overlay.classList.remove('visible');
+                document.getElementById('fullscreenBtn').textContent = '⛶';
+            }
+            
+            setTimeout(() => createChart(), 100);
+        });
+
+        // Close fullscreen on overlay click
+        document.getElementById('fullscreenOverlay').addEventListener('click', () => {
+            if (isFullscreen) {
+                isFullscreen = false;
+                const container = document.querySelector('.chart-container');
+                const overlay = document.getElementById('fullscreenOverlay');
+                container.classList.remove('fullscreen');
+                overlay.classList.remove('visible');
+                document.getElementById('fullscreenBtn').textContent = '⛶';
+                setTimeout(() => createChart(), 100);
+            }
+        });
+
+        // ESC key to exit fullscreen
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isFullscreen) {
+                isFullscreen = false;
+                const container = document.querySelector('.chart-container');
+                const overlay = document.getElementById('fullscreenOverlay');
+                container.classList.remove('fullscreen');
+                overlay.classList.remove('visible');
+                document.getElementById('fullscreenBtn').textContent = '⛶';
+                setTimeout(() => createChart(), 100);
+            }
+        });
+
+        // Update quadrant badge
+        function updateQuadrantBadge() {
+            const badge = document.getElementById('quadrantBadge');
+            if (quadrantFilter) {
+                badge.innerHTML = `
+                    <span class="quadrant-filter-badge">
+                        ${quadrantFilter}
+                        <span class="close-btn" onclick="clearQuadrantFilter()">×</span>
+                    </span>
+                `;
+            } else {
+                badge.innerHTML = '';
+            }
+        }
+
+        // Global function to clear quadrant filter
+        window.clearQuadrantFilter = function() {
+            quadrantFilter = null;
+            document.getElementById('zoomOutBtn').disabled = true;
+            updateChart();
+            updateAggregateTable();
+        };
+
+        // Dynamic CSV loading (replaces embedded data)
+        async function fetchCSV(filename) {
+            try {
+                const cacheBuster = `?_=${Date.now()}`;
+                const response = await fetch(filename + cacheBuster);
+                if (!response.ok) throw new Error(`Failed to load ${filename}`);
+                return await response.text();
+            } catch (error) {
+                console.error(`Error loading ${filename}:`, error);
+                return null;
+            }
+        }
+        
+        async function loadMasterDataFromCSV() {
+            const text = await fetchCSV('../master-data.csv');
+            if (!text) return [];
+            return parseMasterData(text);
+        }
+        
+        // Load aggregate data from pre-computed CSV files
+        async function loadAggregateFromCSV(year, groupBy) {
+            const fileMap = {
+                '2028': {
+                    'needState': '../need-state-data.csv',
+                    'feiPlatform': '../fei-data.csv',
+                    'microCategory': '../mc-data.csv'
+                },
+                '2025': {
+                    'needState': '../need-state-data-2025.csv',
+                    'feiPlatform': '../fei-data-2025.csv',
+                    'microCategory': '../mc-data-2025.csv'
+                }
+            };
+            
+            const filename = fileMap[year]?.[groupBy];
+            if (!filename) {
+                console.error(`No file mapping for year=${year}, groupBy=${groupBy}`);
+                return [];
+            }
+            
+            const text = await fetchCSV(filename);
+            if (!text) return [];
+            
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            return lines.slice(1).map((line, index) => {
+                const values = line.split(',').map(v => v.trim());
+                const name = values[0];
+                
+                let cagr, engagement;
+                if (year === '2025') {
+                    cagr = parseFloat(values[1]) || 0;
+                    engagement = parseFloat(values[2]) || 0;
+                } else {
+                    cagr = parseFloat(values[1]) || 0;
+                    engagement = parseFloat(values[2]) || 0;
+                }
+                
+                if (!name || engagement === 0) return null;
+                
+                return {
+                    name,
+                    subcategory: name,
+                    engagement,
+                    cagr,
+                    needState: groupBy === 'needState' ? name : null,
+                    feiPlatform: groupBy === 'feiPlatform' ? name : null,
+                    microCategory: groupBy === 'microCategory' ? name : null,
+                    index,
+                    isAggregate: true
+                };
+            }).filter(d => d !== null);
+        }
+        
+        // Load aggregate data with category counts
+        async function loadAggregateData(year, groupBy) {
+            const csvData = await loadAggregateFromCSV(year, groupBy);
+            if (csvData.length === 0) return [];
+            
+            const countMap = {};
+            masterData.forEach(d => {
+                const key = d[groupBy];
+                if (key) countMap[key] = (countMap[key] || 0) + 1;
+            });
+            
+            csvData.forEach(d => {
+                d.categoryCount = countMap[d.name] || 0;
+            });
+            
+            return csvData;
+        }
+        
+        // Load drift data - merges both years for comparison
+        async function loadDriftData(groupBy) {
+            const data2025 = await loadAggregateFromCSV('2025', groupBy);
+            const data2028 = await loadAggregateFromCSV('2028', groupBy);
+            
+            if (data2025.length === 0 || data2028.length === 0) return [];
+            
+            const map2025 = new Map(data2025.map(d => [d.name, d]));
+            const map2028 = new Map(data2028.map(d => [d.name, d]));
+            
+            const allNames = [...new Set([...map2025.keys(), ...map2028.keys()])];
+            
+            return allNames.map((name, index) => {
+                const d2025 = map2025.get(name);
+                const d2028 = map2028.get(name);
+                
+                if (!d2025 || !d2028) return null;
+                
+                return {
+                    name,
+                    subcategory: name,
+                    engagement2025: d2025.engagement,
+                    cagr2025: d2025.cagr,
+                    engagement2028: d2028.engagement,
+                    cagr2028: d2028.cagr,
+                    needState: d2025.needState,
+                    feiPlatform: d2025.feiPlatform,
+                    microCategory: d2025.microCategory,
+                    index,
+                    isDrift: true
+                };
+            }).filter(d => d !== null);
+        }
+        
+        // Current view state
+        let currentView = 'individual';
+        let aggregateData = [];
+        let driftData = [];
+        
+        // Refresh view based on current selection
+        async function refreshView() {
+            if (currentView === 'individual') {
+                updateChart();
+                updateAggregateTable();
+            } else if (currentView.startsWith('aggregate-')) {
+                const groupByMap = {
+                    'aggregate-needstate': 'needState',
+                    'aggregate-fei': 'feiPlatform',
+                    'aggregate-mc': 'microCategory'
+                };
+                aggregateData = await loadAggregateData(currentYear, groupByMap[currentView]);
+                createAggregateChart(aggregateData, currentView);
+            } else if (currentView.startsWith('drift-')) {
+                const groupByMap = {
+                    'drift-needstate': 'needState',
+                    'drift-fei': 'feiPlatform',
+                    'drift-mc': 'microCategory'
+                };
+                driftData = await loadDriftData(groupByMap[currentView]);
+                createDriftChart(driftData, currentView);
+            }
+        }
+        
+        // Create aggregate chart
+        function createAggregateChart(data, viewType) {
+            const container = document.getElementById('matrixChart');
+            container.innerHTML = '';
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div style="padding: 50px; text-align: center;">No data available</div>';
+                return;
+            }
+            
+            const containerRect = container.getBoundingClientRect();
+            const width = containerRect.width;
+            const height = containerRect.height;
+            const margin = { top: 50, right: 50, bottom: 60, left: 70 };
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+            
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            
+            const cagrValues = data.map(d => d.cagr);
+            const engValues = data.map(d => d.engagement);
+            
+            const medianCagr = cagrValues.sort((a,b) => a-b)[Math.floor(cagrValues.length/2)];
+            const medianEng = engValues.sort((a,b) => a-b)[Math.floor(engValues.length/2)];
+            
+            const xMin = Math.min(...engValues) * 0.9;
+            const xMax = Math.max(...engValues) * 1.1;
+            const yMin = Math.min(...cagrValues) * 0.9;
+            const yMax = Math.max(...cagrValues) * 1.1;
+            
+            const xScale = (val) => margin.left + ((val - xMin) / (xMax - xMin)) * chartWidth;
+            const yScale = (val) => margin.top + chartHeight - ((val - yMin) / (yMax - yMin)) * chartHeight;
+            const rScale = (val) => Math.max(15, Math.min(50, Math.sqrt(val) * 0.5));
+            
+            const quadrantColors = ['#e8f5e9', '#fff8e1', '#ffebee', '#e3f2fd'];
+            const quadrantLabels = ['High Growth, High Engagement', 'High Growth, Low Engagement', 'Low Growth, High Engagement', 'Low Growth, Low Engagement'];
+            
+            const midX = xScale(medianEng);
+            const midY = yScale(medianCagr);
+            
+            [[margin.left, margin.top, midX - margin.left, midY - margin.top, quadrantColors[1]],
+             [midX, margin.top, width - margin.right - midX, midY - margin.top, quadrantColors[0]],
+             [margin.left, midY, midX - margin.left, height - margin.bottom - midY, quadrantColors[3]],
+             [midX, midY, width - margin.right - midX, height - margin.bottom - midY, quadrantColors[2]]
+            ].forEach(([x, y, w, h, color]) => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', x);
+                rect.setAttribute('y', y);
+                rect.setAttribute('width', w);
+                rect.setAttribute('height', h);
+                rect.setAttribute('fill', color);
+                rect.setAttribute('opacity', '0.5');
+                svg.appendChild(rect);
+            });
+            
+            const colors = viewType === 'aggregate-needstate' ? colorPalettes.needState : {};
+            const defaultColors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
+            
+            data.forEach((d, i) => {
+                const x = xScale(d.engagement);
+                const y = yScale(d.cagr);
+                const r = rScale(d.engagement);
+                const color = colors[d.name] || defaultColors[i % defaultColors.length];
+                
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', r);
+                circle.setAttribute('fill', color);
+                circle.setAttribute('stroke', '#fff');
+                circle.setAttribute('stroke-width', '2');
+                circle.setAttribute('opacity', '0.85');
+                svg.appendChild(circle);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y + r + 14);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '11');
+                text.setAttribute('font-weight', '600');
+                text.setAttribute('fill', '#333');
+                text.textContent = d.name;
+                svg.appendChild(text);
+            });
+            
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xAxis.setAttribute('x', width / 2);
+            xAxis.setAttribute('y', height - 15);
+            xAxis.setAttribute('text-anchor', 'middle');
+            xAxis.setAttribute('font-size', '12');
+            xAxis.setAttribute('fill', '#666');
+            xAxis.textContent = 'Engagement (Millions)';
+            svg.appendChild(xAxis);
+            
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yAxis.setAttribute('x', 15);
+            yAxis.setAttribute('y', height / 2);
+            yAxis.setAttribute('text-anchor', 'middle');
+            yAxis.setAttribute('font-size', '12');
+            yAxis.setAttribute('fill', '#666');
+            yAxis.setAttribute('transform', `rotate(-90, 15, ${height/2})`);
+            yAxis.textContent = 'CAGR (%)';
+            svg.appendChild(yAxis);
+            
+            const titleMap = {
+                'aggregate-needstate': 'Need States Overview',
+                'aggregate-fei': 'FEI Platforms Overview',
+                'aggregate-mc': 'Micro Categories Overview'
+            };
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', width / 2);
+            title.setAttribute('y', 25);
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('font-size', '16');
+            title.setAttribute('font-weight', 'bold');
+            title.setAttribute('fill', '#333');
+            title.textContent = `${titleMap[viewType]} (${currentYear})`;
+            svg.appendChild(title);
+            
+            container.appendChild(svg);
+        }
+        
+        // Create drift chart with arrows showing 2025→2028 movement
+        function createDriftChart(data, viewType) {
+            const container = document.getElementById('matrixChart');
+            container.innerHTML = '';
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div style="padding: 50px; text-align: center;">No drift data available</div>';
+                return;
+            }
+            
+            const containerRect = container.getBoundingClientRect();
+            const width = containerRect.width;
+            const height = containerRect.height;
+            const margin = { top: 50, right: 50, bottom: 60, left: 70 };
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+            
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            
+            const allEng = data.flatMap(d => [d.engagement2025, d.engagement2028]);
+            const allCagr = data.flatMap(d => [d.cagr2025, d.cagr2028]);
+            
+            const xMin = Math.min(...allEng) * 0.9;
+            const xMax = Math.max(...allEng) * 1.1;
+            const yMin = Math.min(...allCagr) * 0.9;
+            const yMax = Math.max(...allCagr) * 1.1;
+            
+            const xScale = (val) => margin.left + ((val - xMin) / (xMax - xMin)) * chartWidth;
+            const yScale = (val) => margin.top + chartHeight - ((val - yMin) / (yMax - yMin)) * chartHeight;
+            const rScale = (val) => Math.max(8, Math.min(30, Math.sqrt(val) * 0.3));
+            
+            const colors = viewType === 'drift-needstate' ? colorPalettes.needState : {};
+            const defaultColors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
+            
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '7');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3.5');
+            marker.setAttribute('orient', 'auto');
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+            polygon.setAttribute('fill', '#666');
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+            
+            data.forEach((d, i) => {
+                const x1 = xScale(d.engagement2025);
+                const y1 = yScale(d.cagr2025);
+                const x2 = xScale(d.engagement2028);
+                const y2 = yScale(d.cagr2028);
+                const r1 = rScale(d.engagement2025);
+                const r2 = rScale(d.engagement2028);
+                const color = colors[d.name] || defaultColors[i % defaultColors.length];
+                
+                const engGrew = d.engagement2028 > d.engagement2025;
+                const arrowColor = engGrew ? '#22c55e' : '#ef4444';
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', arrowColor);
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('stroke-dasharray', '5,3');
+                line.setAttribute('marker-end', 'url(#arrowhead)');
+                svg.appendChild(line);
+                
+                const circle2025 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle2025.setAttribute('cx', x1);
+                circle2025.setAttribute('cy', y1);
+                circle2025.setAttribute('r', r1);
+                circle2025.setAttribute('fill', color);
+                circle2025.setAttribute('stroke', '#fff');
+                circle2025.setAttribute('stroke-width', '2');
+                svg.appendChild(circle2025);
+                
+                const circle2028 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle2028.setAttribute('cx', x2);
+                circle2028.setAttribute('cy', y2);
+                circle2028.setAttribute('r', r2);
+                circle2028.setAttribute('fill', 'white');
+                circle2028.setAttribute('stroke', color);
+                circle2028.setAttribute('stroke-width', '3');
+                svg.appendChild(circle2028);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x2);
+                text.setAttribute('y', y2 + r2 + 14);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '10');
+                text.setAttribute('font-weight', '600');
+                text.setAttribute('fill', '#333');
+                text.textContent = d.name;
+                svg.appendChild(text);
+            });
+            
+            const legendItems = [
+                { label: '2025 Position (filled)', type: 'filled' },
+                { label: '2028 Position (hollow)', type: 'hollow' },
+                { label: 'Engagement grew', color: '#22c55e' },
+                { label: 'Engagement declined', color: '#ef4444' }
+            ];
+            
+            legendItems.forEach((item, i) => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('transform', `translate(${width - 180}, ${margin.top + i * 20})`);
+                
+                if (item.type === 'filled') {
+                    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    c.setAttribute('cx', 8);
+                    c.setAttribute('cy', 8);
+                    c.setAttribute('r', 6);
+                    c.setAttribute('fill', '#6366f1');
+                    g.appendChild(c);
+                } else if (item.type === 'hollow') {
+                    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    c.setAttribute('cx', 8);
+                    c.setAttribute('cy', 8);
+                    c.setAttribute('r', 6);
+                    c.setAttribute('fill', 'white');
+                    c.setAttribute('stroke', '#6366f1');
+                    c.setAttribute('stroke-width', '2');
+                    g.appendChild(c);
+                } else {
+                    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    l.setAttribute('x1', 0);
+                    l.setAttribute('y1', 8);
+                    l.setAttribute('x2', 16);
+                    l.setAttribute('y2', 8);
+                    l.setAttribute('stroke', item.color);
+                    l.setAttribute('stroke-width', '2');
+                    l.setAttribute('stroke-dasharray', '4,2');
+                    g.appendChild(l);
+                }
+                
+                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                t.setAttribute('x', 22);
+                t.setAttribute('y', 12);
+                t.setAttribute('font-size', '10');
+                t.setAttribute('fill', '#666');
+                t.textContent = item.label;
+                g.appendChild(t);
+                
+                svg.appendChild(g);
+            });
+            
+            const titleMap = {
+                'drift-needstate': 'Need States Drift Analysis',
+                'drift-fei': 'FEI Platforms Drift Analysis',
+                'drift-mc': 'Micro Categories Drift Analysis'
+            };
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            title.setAttribute('x', width / 2);
+            title.setAttribute('y', 25);
+            title.setAttribute('text-anchor', 'middle');
+            title.setAttribute('font-size', '16');
+            title.setAttribute('font-weight', 'bold');
+            title.setAttribute('fill', '#333');
+            title.textContent = `${titleMap[viewType]} (2025 → 2028)`;
+            svg.appendChild(title);
+            
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xAxis.setAttribute('x', width / 2);
+            xAxis.setAttribute('y', height - 15);
+            xAxis.setAttribute('text-anchor', 'middle');
+            xAxis.setAttribute('font-size', '12');
+            xAxis.setAttribute('fill', '#666');
+            xAxis.textContent = 'Engagement (Millions)';
+            svg.appendChild(xAxis);
+            
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yAxis.setAttribute('x', 15);
+            yAxis.setAttribute('y', height / 2);
+            yAxis.setAttribute('text-anchor', 'middle');
+            yAxis.setAttribute('font-size', '12');
+            yAxis.setAttribute('fill', '#666');
+            yAxis.setAttribute('transform', `rotate(-90, 15, ${height/2})`);
+            yAxis.textContent = 'CAGR (%)';
+            svg.appendChild(yAxis);
+            
+            container.appendChild(svg);
+        }
+
+        // Initialize
+        async function init() {
+            // Load data dynamically from CSV file
+            masterData = await loadMasterDataFromCSV();
+            
+            if (masterData.length === 0) {
+                console.error('Failed to load master data from CSV');
+                document.body.innerHTML = '<div style="padding: 50px; text-align: center;"><h2>Error Loading Data</h2><p>Could not load data from master-data.csv. Make sure you are running from a web server.</p></div>';
+                return;
+            }
+            
+            // Generate micro category colors
+            const microCategories = [...new Set(masterData.map(d => d.microCategory).filter(m => m))];
+            microCategoryColors = generateMicroCategoryColors(microCategories);
+            
+            // Create UI
+            createFilters();
+            createChart();
+            updateAggregateTable();
+            updateLegend();
+            updateDataTable();
+            
+            // Initialize threshold inputs with calculated medians
+            setTimeout(() => {
+                document.getElementById('cagrThreshold').value = Math.round(storedMedianCagr);
+                document.getElementById('engThreshold').value = Math.round(storedMedianEng);
+            }, 100);
+        }
+
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(createChart, 250);
+        });
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
