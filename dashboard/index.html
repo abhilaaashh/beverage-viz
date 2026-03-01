@@ -822,29 +822,46 @@
             return { headers, data };
         }
 
-        // Parse master data
+        // Helper to parse numbers (handles percentages, commas, N/A)
+        function parseNumber(val) {
+            if (!val || val === 'N/A' || val === '' || val === 'N/A') return null;
+            const cleaned = String(val).replace(/[,%]/g, '').trim();
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? null : num;
+        }
+        
+        // Parse master data - handles two-row header format (matches matrix-maker approach)
         function parseMasterData(csvText) {
-            const { data } = parseCSV(csvText);
-            return data.map(row => {
-                const eng2025 = parseFloat(row['Engagement (2025)']) || 0;
-                const eng2028 = parseFloat(row['Engagement (2028)']) || 0;
-                const cagr2025 = parseFloat(String(row['CAGR (2025)']).replace('%', '')) || 0;
-                const cagr2028 = parseFloat(String(row['CAGR (2028)']).replace('%', '')) || 0;
+            const lines = csvText.trim().split('\n');
+            if (lines.length < 3) return [];
+            
+            // Skip first 2 header rows, parse data using column indices
+            const dataLines = lines.slice(2);
+            
+            return dataLines.map(line => {
+                const cols = line.split('\t');
+                const eng2025 = parseNumber(cols[2]);
+                const eng2028 = parseNumber(cols[4]);
+                const cagr2025 = parseNumber(cols[3]);
+                const cagr2028 = parseNumber(cols[5]);
+                
+                // Skip rows with no valid data
+                if (eng2025 === null && eng2028 === null) return null;
                 
                 return {
-                    macroCategory: row['Macro Category'] || '',
-                    subcategory: row['Subcategory'] || '',
-                    engagement2025: eng2025,
-                    cagr2025: cagr2025,
-                    engagement2028: eng2028,
-                    cagr2028: cagr2028,
-                    needState: row['Key Need Space'] || row['Need State (Allocated)'] || '',
-                    feiPlatform: row['Platform'] || '',
-                    microCategory: row['Micro Category'] || '',
-                    opportunitySpace: row['Opportunity Space'] || '',
-                    whitespaceIdea: row['Whitespace Idea'] || ''
+                    macroCategory: (cols[0] || '').trim(),
+                    subcategory: (cols[1] || '').trim(),
+                    engagement2025: eng2025 || 0,
+                    cagr2025: cagr2025 || 0,
+                    engagement2028: eng2028 || 0,
+                    cagr2028: cagr2028 || 0,
+                    needState: (cols[7] || cols[10] || '').trim(),
+                    feiPlatform: (cols[14] || '').trim(),
+                    microCategory: (cols[13] || '').trim(),
+                    opportunitySpace: (cols[15] || '').trim(),
+                    whitespaceIdea: (cols[12] || '').trim()
                 };
-            }).filter(d => d.subcategory);
+            }).filter(d => d && d.subcategory);
         }
 
         // Get current values based on year
@@ -1707,7 +1724,7 @@
         // Refresh view based on current selection
         async function refreshView() {
             if (currentView === 'individual') {
-                updateChart();
+                createChart();
                 updateAggregateTable();
             } else if (currentView.startsWith('aggregate-')) {
                 const groupByMap = {
@@ -1730,7 +1747,7 @@
         
         // Create aggregate chart
         function createAggregateChart(data, viewType) {
-            const container = document.getElementById('matrixChart');
+            const container = document.getElementById('chart');
             container.innerHTML = '';
             
             if (data.length === 0) {
@@ -1855,7 +1872,7 @@
         
         // Create drift chart with arrows showing 2025→2028 movement
         function createDriftChart(data, viewType) {
-            const container = document.getElementById('matrixChart');
+            const container = document.getElementById('chart');
             container.innerHTML = '';
             
             if (data.length === 0) {
@@ -2064,13 +2081,6 @@
             createChart();
             updateAggregateTable();
             updateLegend();
-            updateDataTable();
-            
-            // Initialize threshold inputs with calculated medians
-            setTimeout(() => {
-                document.getElementById('cagrThreshold').value = Math.round(storedMedianCagr);
-                document.getElementById('engThreshold').value = Math.round(storedMedianEng);
-            }, 100);
         }
 
         // Handle window resize
