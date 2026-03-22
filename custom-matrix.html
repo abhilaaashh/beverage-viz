@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom 2x2 Matrix Creator</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #667eea;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
+        }
+
+        .panel {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .panel:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-toggle {
+            color: #94a3b8;
+            transition: transform 0.2s;
+        }
+
+        .panel-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .panel-content {
+            display: block;
+        }
+
+        .panel-content.collapsed {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: #1e293b;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .form-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .color-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-input {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .color-input::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-input::-webkit-color-swatch {
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .color-hex {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-family: 'SF Mono', Monaco, monospace;
+            color: #475569;
+            text-transform: uppercase;
+        }
+
+        .quadrant-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .quadrant-item {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .quadrant-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .quadrant-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .quadrant-position {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quadrant-item .form-input {
+            font-size: 0.8rem;
+            padding: 8px 10px;
+        }
+
+        .quadrant-item .color-input {
+            width: 32px;
+            height: 32px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: #475569;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            width: 100%;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.8rem;
+        }
+
+        .visualization-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .chart-subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .chart-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        .quadrant-label {
+            font-size: 13px;
+            font-weight: 700;
+            fill: rgba(0, 0, 0, 0.45);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .axis-label {
+            font-size: 14px;
+            font-weight: 600;
+            fill: #1A1A1A;
+        }
+
+        .axis line, .axis path {
+            stroke: rgba(0, 0, 0, 0.3);
+        }
+
+        .axis text {
+            fill: #374151;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .trend-label {
+            font-size: 11px;
+            fill: #1A1A1A;
+            pointer-events: none;
+            font-weight: 600;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            max-width: 280px;
+            z-index: 1000;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+            gap: 12px;
+        }
+
+        .tooltip-label {
+            color: #64748b;
+        }
+
+        .tooltip-value {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .legend-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 12px;
+        }
+
+        .legend-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .data-upload-zone {
+            border: 2px dashed rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(102, 126, 234, 0.02);
+        }
+
+        .data-upload-zone:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .data-upload-zone.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .upload-icon {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .upload-hint {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .data-table-mini {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            margin-top: 12px;
+        }
+
+        .data-table-mini th {
+            background: rgba(0, 0, 0, 0.04);
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .data-table-mini td {
+            padding: 6px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            vertical-align: middle;
+        }
+
+        .data-table-mini input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-family: inherit;
+        }
+
+        .data-table-mini input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .data-table-mini .num-input {
+            width: 60px;
+            text-align: right;
+        }
+
+        .data-table-mini .delete-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .data-table-mini .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .data-table-wrapper {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .add-row-btn {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+        }
+
+        .category-name {
+            flex: 1;
+            font-size: 0.85rem;
+            color: #475569;
+        }
+
+        .category-count {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .download-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-label {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.15);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #94a3b8;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+            background-color: white;
+        }
+
+        .resolution-select {
+            padding: 8px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: #475569;
+            background: white;
+            cursor: pointer;
+        }
+
+        .resolution-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+            color: #94a3b8;
+        }
+
+        .empty-state svg {
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+
+        .preset-colors {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .preset-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-color:hover {
+            transform: scale(1.1);
+        }
+
+        .preset-color.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+        }
+
+        .threshold-slider {
+            width: 100%;
+            margin: 8px 0;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+        }
+
+        .threshold-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .threshold-value {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .sample-data-btn {
+            margin-top: 10px;
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: none;
+                order: 2;
+            }
+
+            .visualization-container {
+                order: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Home
+    </a>
+
+    <div class="container">
+        <header>
+            <h1>Custom 2x2 Matrix Creator</h1>
+            <p class="subtitle">Build your own matrix visualization from scratch</p>
+        </header>
+
+        <div class="main-layout">
+            <div class="sidebar">
+                <!-- Data Import Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Data Import</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="data-upload-zone" id="uploadZone">
+                            <input type="file" id="fileInput" accept=".csv,.tsv,.txt" hidden>
+                            <svg class="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <div class="upload-text">Drop CSV file or click to upload</div>
+                            <div class="upload-hint">Columns: Name, X-Value, Y-Value, Category (optional)</div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm sample-data-btn" onclick="loadSampleData()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                            Load Sample Data
+                        </button>
+                        <div class="data-table-wrapper" id="dataTableWrapper" style="display: none;">
+                            <table class="data-table-mini">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th style="width: 65px">X</th>
+                                        <th style="width: 65px">Y</th>
+                                        <th style="width: 80px">Category</th>
+                                        <th style="width: 30px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataTableBody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-secondary btn-sm add-row-btn" id="addRowBtn" style="display: none;" onclick="addDataRow()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Row
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Title & Labels Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Title & Labels</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="form-group">
+                            <label class="form-label">Chart Title</label>
+                            <input type="text" class="form-input" id="chartTitle" value="Custom 2x2 Matrix" oninput="updateChart()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subtitle</label>
+                            <input type="text" class="form-input" id="chartSubtitle" value="X-Axis vs Y-Axis Analysis" oninput="updateChart()">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">X-Axis Label</label>
+                                <input type="text" class="form-input" id="xAxisLabel" value="X Value (%)" oninput="updateChart()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Y-Axis Label</label>
+                                <input type="text" class="form-input" id="yAxisLabel" value="Y Value" oninput="updateChart()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quadrant Colors Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Quadrant Colors</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="quadrant-grid">
+                            <div class="quadrant-item">
+                                <div class="quadrant-item-header">
+                                    <div class="quadrant-preview" id="q1Preview" style="background: #BBDEFB;"></div>
+                                    <span class="quadrant-position">Top Left</span>
+                                </div>
+                                <input type="color" class="color-input" id="q1Color" value="#BBDEFB" onchange="updateQuadrantColor(1, this.value)">
+                                <input type="text" class="form-input" id="q1Label" value="Mature & Stable" style="margin-top: 8px;" oninput="updateChart()">
+                            </div>
+                            <div class="quadrant-item">
+                                <div class="quadrant-item-header">
+                                    <div class="quadrant-preview" id="q2Preview" style="background: #C8E6C9;"></div>
+                                    <span class="quadrant-position">Top Right</span>
+                                </div>
+                                <input type="color" class="color-input" id="q2Color" value="#C8E6C9" onchange="updateQuadrantColor(2, this.value)">
+                                <input type="text" class="form-input" id="q2Label" value="Growth At Scale" style="margin-top: 8px;" oninput="updateChart()">
+                            </div>
+                            <div class="quadrant-item">
+                                <div class="quadrant-item-header">
+                                    <div class="quadrant-preview" id="q3Preview" style="background: #F0F0F0;"></div>
+                                    <span class="quadrant-position">Bottom Left</span>
+                                </div>
+                                <input type="color" class="color-input" id="q3Color" value="#F0F0F0" onchange="updateQuadrantColor(3, this.value)">
+                                <input type="text" class="form-input" id="q3Label" value="Revival Zone" style="margin-top: 8px;" oninput="updateChart()">
+                            </div>
+                            <div class="quadrant-item">
+                                <div class="quadrant-item-header">
+                                    <div class="quadrant-preview" id="q4Preview" style="background: #FFE0B2;"></div>
+                                    <span class="quadrant-position">Bottom Right</span>
+                                </div>
+                                <input type="color" class="color-input" id="q4Color" value="#FFE0B2" onchange="updateQuadrantColor(4, this.value)">
+                                <input type="text" class="form-input" id="q4Label" value="Early Bets" style="margin-top: 8px;" oninput="updateChart()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Axis Scale Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Axis Scale & Thresholds</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="form-group">
+                            <label class="form-label">X-Axis Range</label>
+                            <div class="form-row">
+                                <input type="number" class="form-input" id="xMin" placeholder="Min (auto)" oninput="updateChart()">
+                                <input type="number" class="form-input" id="xMax" placeholder="Max (auto)" oninput="updateChart()">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Y-Axis Range</label>
+                            <div class="form-row">
+                                <input type="number" class="form-input" id="yMin" placeholder="Min (auto)" oninput="updateChart()">
+                                <input type="number" class="form-input" id="yMax" placeholder="Max (auto)" oninput="updateChart()">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">X-Axis Threshold (Vertical Line)</label>
+                            <input type="range" class="threshold-slider" id="xThreshold" min="0" max="100" value="50" oninput="updateThresholdDisplay('x'); updateChart()">
+                            <div class="threshold-value">
+                                <span id="xThresholdMin">0</span>
+                                <span id="xThresholdValue">50</span>
+                                <span id="xThresholdMax">100</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Y-Axis Threshold (Horizontal Line)</label>
+                            <input type="range" class="threshold-slider" id="yThreshold" min="0" max="100" value="50" oninput="updateThresholdDisplay('y'); updateChart()">
+                            <div class="threshold-value">
+                                <span id="yThresholdMin">0</span>
+                                <span id="yThresholdValue">50</span>
+                                <span id="yThresholdMax">100</span>
+                            </div>
+                        </div>
+                        <div class="option-row" style="margin-top: 12px;">
+                            <span class="option-label">Auto Threshold (Median)</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoThreshold" checked onchange="updateChart()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Colors Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Category Colors</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="category-list" id="categoryList">
+                            <div style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 10px;">
+                                Import data to see categories
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Download Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Download Options</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="download-options">
+                            <div class="option-row">
+                                <span class="option-label">Resolution</span>
+                                <select class="resolution-select" id="resolution">
+                                    <option value="1">1x (Standard)</option>
+                                    <option value="2" selected>2x (High DPI)</option>
+                                    <option value="3">3x (Ultra)</option>
+                                </select>
+                            </div>
+                            <div class="option-row">
+                                <span class="option-label">Include Legend</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="includeLegend" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="option-row">
+                                <span class="option-label">Include Title</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="includeTitle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="option-row">
+                                <span class="option-label">Show Labels</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="showLabels" checked onchange="updateChart()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <button class="btn btn-success" onclick="downloadPNG()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Download PNG
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization-container">
+                <div class="chart-header" id="chartHeader">
+                    <h2 class="chart-title" id="displayTitle">Custom 2x2 Matrix</h2>
+                    <p class="chart-subtitle" id="displaySubtitle">X-Axis vs Y-Axis Analysis</p>
+                </div>
+                <div class="chart-container">
+                    <div id="chart">
+                        <div class="empty-state">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="7" height="7"/>
+                                <rect x="14" y="3" width="7" height="7"/>
+                                <rect x="3" y="14" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/>
+                            </svg>
+                            <h3 class="empty-state-title">No Data Yet</h3>
+                            <p class="empty-state-text">Upload a CSV file or load sample data<br>to create your custom matrix</p>
+                        </div>
+                    </div>
+                    <div class="tooltip" id="tooltip"></div>
+                </div>
+                <div class="legend-container" id="legendContainer" style="display: none;">
+                    <div class="legend-title">Categories</div>
+                    <div class="legend" id="legend"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="toastText">Success!</span>
+    </div>
+
+    <script>
+        // Configuration state
+        const config = {
+            title: 'Custom 2x2 Matrix',
+            subtitle: 'X-Axis vs Y-Axis Analysis',
+            xAxisLabel: 'X Value (%)',
+            yAxisLabel: 'Y Value',
+            xMin: null,
+            xMax: null,
+            yMin: null,
+            yMax: null,
+            xThreshold: null,
+            yThreshold: null,
+            autoThreshold: true,
+            quadrants: {
+                topLeft: { color: '#BBDEFB', label: 'Mature & Stable' },
+                topRight: { color: '#C8E6C9', label: 'Growth At Scale' },
+                bottomLeft: { color: '#F0F0F0', label: 'Revival Zone' },
+                bottomRight: { color: '#FFE0B2', label: 'Early Bets' }
+            },
+            categoryColors: {},
+            showLabels: true
+        };
+
+        // Data storage
+        let chartData = [];
+
+        // Default colors for categories
+        const defaultColors = [
+            '#E61A27', '#009FDA', '#00A651', '#F5A623', '#7B2D8E',
+            '#E91E63', '#00B4D8', '#2E7D32', '#FF6F00', '#6A1B9A',
+            '#0288D1', '#C62828', '#558B2F', '#F57C00', '#5E35B1'
+        ];
+
+        // Chart dimensions
+        const margin = { top: 60, right: 50, bottom: 80, left: 80 };
+        const width = 900 - margin.left - margin.right;
+        const height = 600 - margin.top - margin.bottom;
+
+        // Debounce timer
+        let updateTimeout;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupUploadZone();
+            setupPasteHandler();
+        });
+
+        function togglePanel(header) {
+            const content = header.nextElementSibling;
+            const toggle = header.querySelector('.panel-toggle');
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+
+        function setupUploadZone() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+
+            zone.addEventListener('click', () => input.click());
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) processFile(file);
+            });
+
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) processFile(file);
+            });
+        }
+
+        function setupPasteHandler() {
+            document.addEventListener('paste', (e) => {
+                const text = e.clipboardData.getData('text');
+                if (text && text.includes('\t') || text.includes(',')) {
+                    e.preventDefault();
+                    parseAndLoadData(text);
+                }
+            });
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                parseAndLoadData(e.target.result);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseAndLoadData(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) {
+                showToast('Invalid data format', 'error');
+                return;
+            }
+
+            const delimiter = text.includes('\t') ? '\t' : ',';
+            const headers = lines[0].toLowerCase().split(delimiter).map(h => h.trim());
+
+            const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('label') || h.includes('item'));
+            const xIdx = headers.findIndex(h => h.includes('x') || h.includes('cagr') || h.includes('growth') || h === 'value1');
+            const yIdx = headers.findIndex(h => h.includes('y') || h.includes('engagement') || h.includes('eng') || h === 'value2' || h.includes('size'));
+            const catIdx = headers.findIndex(h => h.includes('category') || h.includes('cat') || h.includes('type') || h.includes('group') || h.includes('segment'));
+
+            if (xIdx === -1 || yIdx === -1) {
+                showToast('Could not find X and Y value columns', 'error');
+                return;
+            }
+
+            chartData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(delimiter).map(c => c.trim());
+                if (cols.length < 2) continue;
+
+                const name = nameIdx >= 0 ? cols[nameIdx] : `Item ${i}`;
+                const xVal = parseFloat(cols[xIdx]?.replace(/[,%]/g, ''));
+                const yVal = parseFloat(cols[yIdx]?.replace(/[,%]/g, ''));
+                const category = catIdx >= 0 ? cols[catIdx] : 'Default';
+
+                if (!isNaN(xVal) && !isNaN(yVal)) {
+                    chartData.push({ name, xValue: xVal, yValue: yVal, category, index: chartData.length });
+                }
+            }
+
+            if (chartData.length === 0) {
+                showToast('No valid data points found', 'error');
+                return;
+            }
+
+            assignCategoryColors();
+            updateDataTable();
+            updateThresholdSliders();
+            updateChart();
+            showToast(`Loaded ${chartData.length} data points`, 'success');
+        }
+
+        function loadSampleData() {
+            chartData = [
+                { name: 'Product A', xValue: 15, yValue: 80, category: 'Premium', index: 0 },
+                { name: 'Product B', xValue: 45, yValue: 120, category: 'Premium', index: 1 },
+                { name: 'Product C', xValue: 8, yValue: 45, category: 'Standard', index: 2 },
+                { name: 'Product D', xValue: 55, yValue: 35, category: 'Budget', index: 3 },
+                { name: 'Product E', xValue: 25, yValue: 95, category: 'Premium', index: 4 },
+                { name: 'Product F', xValue: 65, yValue: 150, category: 'Luxury', index: 5 },
+                { name: 'Product G', xValue: 12, yValue: 60, category: 'Standard', index: 6 },
+                { name: 'Product H', xValue: 38, yValue: 25, category: 'Budget', index: 7 },
+                { name: 'Product I', xValue: 72, yValue: 88, category: 'Luxury', index: 8 },
+                { name: 'Product J', xValue: 5, yValue: 110, category: 'Premium', index: 9 },
+                { name: 'Product K', xValue: 48, yValue: 72, category: 'Standard', index: 10 },
+                { name: 'Product L', xValue: 30, yValue: 42, category: 'Budget', index: 11 }
+            ];
+
+            assignCategoryColors();
+            updateDataTable();
+            updateThresholdSliders();
+            updateChart();
+            showToast('Sample data loaded', 'success');
+        }
+
+        function assignCategoryColors() {
+            const categories = [...new Set(chartData.map(d => d.category))];
+            categories.forEach((cat, i) => {
+                if (!config.categoryColors[cat]) {
+                    config.categoryColors[cat] = defaultColors[i % defaultColors.length];
+                }
+            });
+            updateCategoryList();
+        }
+
+        function updateCategoryList() {
+            const container = document.getElementById('categoryList');
+            const categories = [...new Set(chartData.map(d => d.category))];
+
+            if (categories.length === 0) {
+                container.innerHTML = '<div style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 10px;">Import data to see categories</div>';
+                return;
+            }
+
+            container.innerHTML = categories.map(cat => {
+                const count = chartData.filter(d => d.category === cat).length;
+                const color = config.categoryColors[cat] || defaultColors[0];
+                return `
+                    <div class="category-item">
+                        <input type="color" class="color-input" value="${color}" 
+                               style="width: 28px; height: 28px;" 
+                               onchange="updateCategoryColor('${cat}', this.value)">
+                        <span class="category-name">${cat}</span>
+                        <span class="category-count">${count}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCategoryColor(category, color) {
+            config.categoryColors[category] = color;
+            updateChart();
+        }
+
+        function updateDataTable() {
+            const wrapper = document.getElementById('dataTableWrapper');
+            const tbody = document.getElementById('dataTableBody');
+            const addBtn = document.getElementById('addRowBtn');
+
+            if (chartData.length === 0) {
+                wrapper.style.display = 'none';
+                addBtn.style.display = 'none';
+                return;
+            }
+
+            wrapper.style.display = 'block';
+            addBtn.style.display = 'block';
+
+            tbody.innerHTML = chartData.map((d, i) => `
+                <tr>
+                    <td><input type="text" value="${d.name}" onchange="updateDataPoint(${i}, 'name', this.value)"></td>
+                    <td><input type="number" class="num-input" value="${d.xValue}" onchange="updateDataPoint(${i}, 'xValue', parseFloat(this.value))"></td>
+                    <td><input type="number" class="num-input" value="${d.yValue}" onchange="updateDataPoint(${i}, 'yValue', parseFloat(this.value))"></td>
+                    <td><input type="text" value="${d.category}" onchange="updateDataPoint(${i}, 'category', this.value)"></td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteDataPoint(${i})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateDataPoint(index, field, value) {
+            chartData[index][field] = value;
+            if (field === 'category') {
+                assignCategoryColors();
+            }
+            updateChart();
+        }
+
+        function deleteDataPoint(index) {
+            chartData.splice(index, 1);
+            chartData.forEach((d, i) => d.index = i);
+            assignCategoryColors();
+            updateDataTable();
+            updateChart();
+        }
+
+        function addDataRow() {
+            const categories = [...new Set(chartData.map(d => d.category))];
+            chartData.push({
+                name: `Item ${chartData.length + 1}`,
+                xValue: 50,
+                yValue: 50,
+                category: categories[0] || 'Default',
+                index: chartData.length
+            });
+            assignCategoryColors();
+            updateDataTable();
+            updateChart();
+        }
+
+        function updateQuadrantColor(quadrant, color) {
+            const keys = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
+            config.quadrants[keys[quadrant - 1]].color = color;
+            document.getElementById(`q${quadrant}Preview`).style.background = color;
+            updateChart();
+        }
+
+        function updateThresholdSliders() {
+            if (chartData.length === 0) return;
+
+            const xValues = chartData.map(d => d.xValue);
+            const yValues = chartData.map(d => d.yValue);
+
+            const xMin = Math.min(...xValues);
+            const xMax = Math.max(...xValues);
+            const yMin = Math.min(...yValues);
+            const yMax = Math.max(...yValues);
+
+            const xSlider = document.getElementById('xThreshold');
+            const ySlider = document.getElementById('yThreshold');
+
+            xSlider.min = xMin;
+            xSlider.max = xMax;
+            xSlider.value = d3.median(xValues);
+
+            ySlider.min = yMin;
+            ySlider.max = yMax;
+            ySlider.value = d3.median(yValues);
+
+            updateThresholdDisplay('x');
+            updateThresholdDisplay('y');
+        }
+
+        function updateThresholdDisplay(axis) {
+            const slider = document.getElementById(`${axis}Threshold`);
+            document.getElementById(`${axis}ThresholdMin`).textContent = parseFloat(slider.min).toFixed(1);
+            document.getElementById(`${axis}ThresholdMax`).textContent = parseFloat(slider.max).toFixed(1);
+            document.getElementById(`${axis}ThresholdValue`).textContent = parseFloat(slider.value).toFixed(1);
+        }
+
+        function updateChart() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(renderChart, 150);
+        }
+
+        function renderChart() {
+            // Update config from inputs
+            config.title = document.getElementById('chartTitle').value;
+            config.subtitle = document.getElementById('chartSubtitle').value;
+            config.xAxisLabel = document.getElementById('xAxisLabel').value;
+            config.yAxisLabel = document.getElementById('yAxisLabel').value;
+            config.showLabels = document.getElementById('showLabels').checked;
+            config.autoThreshold = document.getElementById('autoThreshold').checked;
+
+            config.quadrants.topLeft.label = document.getElementById('q1Label').value;
+            config.quadrants.topRight.label = document.getElementById('q2Label').value;
+            config.quadrants.bottomLeft.label = document.getElementById('q3Label').value;
+            config.quadrants.bottomRight.label = document.getElementById('q4Label').value;
+
+            config.xMin = document.getElementById('xMin').value ? parseFloat(document.getElementById('xMin').value) : null;
+            config.xMax = document.getElementById('xMax').value ? parseFloat(document.getElementById('xMax').value) : null;
+            config.yMin = document.getElementById('yMin').value ? parseFloat(document.getElementById('yMin').value) : null;
+            config.yMax = document.getElementById('yMax').value ? parseFloat(document.getElementById('yMax').value) : null;
+
+            // Update display title
+            document.getElementById('displayTitle').textContent = config.title;
+            document.getElementById('displaySubtitle').textContent = config.subtitle;
+
+            if (chartData.length === 0) {
+                document.getElementById('chart').innerHTML = `
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                        <h3 class="empty-state-title">No Data Yet</h3>
+                        <p class="empty-state-text">Upload a CSV file or load sample data<br>to create your custom matrix</p>
+                    </div>
+                `;
+                document.getElementById('legendContainer').style.display = 'none';
+                return;
+            }
+
+            createChart();
+        }
+
+        function createChart() {
+            d3.select('#chart').selectAll('*').remove();
+
+            const xValues = chartData.map(d => d.xValue);
+            const yValues = chartData.map(d => d.yValue);
+
+            // Calculate bounds
+            let xMin = config.xMin !== null ? config.xMin : d3.min(xValues);
+            let xMax = config.xMax !== null ? config.xMax : d3.max(xValues);
+            let yMin = config.yMin !== null ? config.yMin : d3.min(yValues);
+            let yMax = config.yMax !== null ? config.yMax : d3.max(yValues);
+
+            const xPadding = (xMax - xMin) * 0.1;
+            const yPadding = (yMax - yMin) * 0.1;
+
+            xMin -= xPadding;
+            xMax += xPadding;
+            yMin -= yPadding;
+            yMax += yPadding;
+
+            // Calculate thresholds
+            let xThreshold, yThreshold;
+            if (config.autoThreshold) {
+                xThreshold = d3.median(xValues);
+                yThreshold = d3.median(yValues);
+            } else {
+                xThreshold = parseFloat(document.getElementById('xThreshold').value);
+                yThreshold = parseFloat(document.getElementById('yThreshold').value);
+            }
+
+            // Create scales
+            const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, width]);
+            const yScale = d3.scaleLinear().domain([yMin, yMax]).range([height, 0]);
+
+            // Create SVG
+            const svg = d3.select('#chart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Add shadow filter
+            const defs = svg.append('defs');
+            const filter = defs.append('filter').attr('id', 'bubbleShadow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+            filter.append('feDropShadow').attr('dx', 0).attr('dy', 2).attr('stdDeviation', 3).attr('flood-opacity', 0.2);
+
+            // Draw quadrants
+            const quadrantData = [
+                { x: 0, y: 0, w: xScale(xThreshold), h: yScale(yThreshold), color: config.quadrants.topLeft.color },
+                { x: xScale(xThreshold), y: 0, w: width - xScale(xThreshold), h: yScale(yThreshold), color: config.quadrants.topRight.color },
+                { x: 0, y: yScale(yThreshold), w: xScale(xThreshold), h: height - yScale(yThreshold), color: config.quadrants.bottomLeft.color },
+                { x: xScale(xThreshold), y: yScale(yThreshold), w: width - xScale(xThreshold), h: height - yScale(yThreshold), color: config.quadrants.bottomRight.color }
+            ];
+
+            svg.selectAll('.quadrant')
+                .data(quadrantData)
+                .enter()
+                .append('rect')
+                .attr('class', 'quadrant')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y)
+                .attr('width', d => d.w)
+                .attr('height', d => d.h)
+                .attr('fill', d => d.color);
+
+            // Draw grid
+            const gridGroup = svg.append('g').attr('class', 'grid-lines');
+            const xTicks = xScale.ticks(8);
+            const yTicks = yScale.ticks(6);
+
+            xTicks.forEach(tick => {
+                gridGroup.append('line')
+                    .attr('x1', xScale(tick)).attr('y1', 0)
+                    .attr('x2', xScale(tick)).attr('y2', height)
+                    .attr('stroke', 'rgba(0,0,0,0.06)').attr('stroke-width', 1);
+            });
+
+            yTicks.forEach(tick => {
+                gridGroup.append('line')
+                    .attr('x1', 0).attr('y1', yScale(tick))
+                    .attr('x2', width).attr('y2', yScale(tick))
+                    .attr('stroke', 'rgba(0,0,0,0.06)').attr('stroke-width', 1);
+            });
+
+            // Draw median lines
+            svg.append('line')
+                .attr('x1', xScale(xThreshold)).attr('y1', 0)
+                .attr('x2', xScale(xThreshold)).attr('y2', height)
+                .attr('stroke', '#1A1A1A').attr('stroke-width', 1.5).attr('stroke-dasharray', '6,4');
+
+            svg.append('line')
+                .attr('x1', 0).attr('y1', yScale(yThreshold))
+                .attr('x2', width).attr('y2', yScale(yThreshold))
+                .attr('stroke', '#1A1A1A').attr('stroke-width', 1.5).attr('stroke-dasharray', '6,4');
+
+            // Draw quadrant labels
+            const quadrantLabels = [
+                { x: xScale(xThreshold) / 2, y: 20, text: config.quadrants.topLeft.label.toUpperCase() },
+                { x: xScale(xThreshold) + (width - xScale(xThreshold)) / 2, y: 20, text: config.quadrants.topRight.label.toUpperCase() },
+                { x: xScale(xThreshold) / 2, y: height - 12, text: config.quadrants.bottomLeft.label.toUpperCase() },
+                { x: xScale(xThreshold) + (width - xScale(xThreshold)) / 2, y: height - 12, text: config.quadrants.bottomRight.label.toUpperCase() }
+            ];
+
+            svg.selectAll('.quadrant-label')
+                .data(quadrantLabels)
+                .enter()
+                .append('text')
+                .attr('class', 'quadrant-label')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y)
+                .attr('text-anchor', 'middle')
+                .text(d => d.text);
+
+            // Draw axes
+            const xAxis = d3.axisBottom(xScale).ticks(8).tickSize(-6);
+            const yAxis = d3.axisLeft(yScale).ticks(6).tickSize(-6);
+
+            svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', `translate(0,${height})`)
+                .call(xAxis)
+                .selectAll('text')
+                .style('font-size', '11px')
+                .style('fill', '#374151');
+
+            svg.append('g')
+                .attr('class', 'axis')
+                .call(yAxis)
+                .selectAll('text')
+                .style('font-size', '11px')
+                .style('fill', '#374151');
+
+            // Axis labels
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('x', width / 2)
+                .attr('y', height + 50)
+                .attr('text-anchor', 'middle')
+                .text(config.xAxisLabel);
+
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -55)
+                .attr('text-anchor', 'middle')
+                .text(config.yAxisLabel);
+
+            // Calculate bubble sizes
+            const sizeScale = d3.scaleSqrt()
+                .domain([d3.min(yValues), d3.max(yValues)])
+                .range([8, 28]);
+
+            // Draw bubbles
+            const tooltip = d3.select('#tooltip');
+
+            svg.selectAll('.bubble')
+                .data(chartData)
+                .enter()
+                .append('circle')
+                .attr('class', 'bubble')
+                .attr('cx', d => xScale(d.xValue))
+                .attr('cy', d => yScale(d.yValue))
+                .attr('r', d => sizeScale(d.yValue))
+                .attr('fill', d => config.categoryColors[d.category] || defaultColors[0])
+                .attr('stroke', 'white')
+                .attr('stroke-width', 2)
+                .attr('filter', 'url(#bubbleShadow)')
+                .style('cursor', 'pointer')
+                .on('mouseover', function(event, d) {
+                    d3.select(this).attr('stroke-width', 3);
+                    tooltip.classed('visible', true)
+                        .html(`
+                            <div class="tooltip-title">${d.name}</div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Category:</span>
+                                <span class="tooltip-value">${d.category}</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">${config.xAxisLabel}:</span>
+                                <span class="tooltip-value">${d.xValue.toFixed(2)}</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">${config.yAxisLabel}:</span>
+                                <span class="tooltip-value">${d.yValue.toFixed(2)}</span>
+                            </div>
+                        `);
+                })
+                .on('mousemove', function(event) {
+                    const rect = document.querySelector('.chart-container').getBoundingClientRect();
+                    tooltip.style('left', (event.clientX - rect.left + 15) + 'px')
+                           .style('top', (event.clientY - rect.top - 10) + 'px');
+                })
+                .on('mouseout', function() {
+                    d3.select(this).attr('stroke-width', 2);
+                    tooltip.classed('visible', false);
+                });
+
+            // Draw labels
+            if (config.showLabels) {
+                const labelPositions = calculateLabelPositions(chartData, xScale, yScale, sizeScale, xThreshold, yThreshold);
+
+                const labelGroups = svg.selectAll('.label-group')
+                    .data(labelPositions)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'label-group')
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+
+                if (labelPositions.some(d => d.needsLeader)) {
+                    labelGroups.filter(d => d.needsLeader)
+                        .append('line')
+                        .attr('class', 'leader-line')
+                        .attr('x1', 0).attr('y1', 0)
+                        .attr('x2', d => d.offsetX * 0.6)
+                        .attr('y2', d => d.offsetY * 0.6)
+                        .attr('stroke', 'rgba(0,0,0,0.25)')
+                        .attr('stroke-width', 1)
+                        .attr('stroke-dasharray', '2,2');
+                }
+
+                labelGroups.append('rect')
+                    .attr('class', 'label-pill')
+                    .attr('x', d => d.textAnchor === 'start' ? d.offsetX - 2 : d.offsetX - 60)
+                    .attr('y', d => d.offsetY - 8)
+                    .attr('width', d => Math.min(d.data.name.length * 6 + 8, 80))
+                    .attr('height', 16)
+                    .attr('rx', 8)
+                    .attr('fill', 'rgba(255,255,255,0.92)')
+                    .attr('stroke', 'rgba(0,0,0,0.08)')
+                    .attr('stroke-width', 1);
+
+                labelGroups.append('text')
+                    .attr('class', 'trend-label')
+                    .attr('x', d => d.offsetX)
+                    .attr('y', d => d.offsetY)
+                    .attr('dy', '0.35em')
+                    .attr('text-anchor', d => d.textAnchor)
+                    .text(d => d.data.name.length > 12 ? d.data.name.substring(0, 11) + '...' : d.data.name);
+            }
+
+            // Update legend
+            updateLegend();
+        }
+
+        function calculateLabelPositions(data, xScale, yScale, sizeScale, xThreshold, yThreshold) {
+            return data.map(d => {
+                const isLeft = d.xValue <= xThreshold;
+                const isBottom = d.yValue <= yThreshold;
+                const bubbleRadius = sizeScale(d.yValue);
+                const offsetX = isLeft ? bubbleRadius + 6 : -(bubbleRadius + 6);
+
+                return {
+                    data: d,
+                    x: xScale(d.xValue),
+                    y: yScale(d.yValue),
+                    offsetX: offsetX,
+                    offsetY: 0,
+                    needsLeader: false,
+                    textAnchor: isLeft ? 'start' : 'end'
+                };
+            });
+        }
+
+        function updateLegend() {
+            const categories = [...new Set(chartData.map(d => d.category))];
+            const legendContainer = document.getElementById('legendContainer');
+            const legend = document.getElementById('legend');
+
+            if (categories.length <= 1) {
+                legendContainer.style.display = 'none';
+                return;
+            }
+
+            legendContainer.style.display = 'block';
+            legend.innerHTML = categories.map(cat => `
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: ${config.categoryColors[cat]}"></div>
+                    <span>${cat}</span>
+                </div>
+            `).join('');
+        }
+
+        function downloadPNG() {
+            if (chartData.length === 0) {
+                showToast('No chart to download', 'error');
+                return;
+            }
+
+            const resolution = parseInt(document.getElementById('resolution').value);
+            const includeLegend = document.getElementById('includeLegend').checked;
+            const includeTitle = document.getElementById('includeTitle').checked;
+
+            const svgElement = document.querySelector('#chart svg');
+            if (!svgElement) {
+                showToast('Chart not found', 'error');
+                return;
+            }
+
+            const svgClone = svgElement.cloneNode(true);
+            const svgWidth = svgElement.getAttribute('width');
+            const svgHeight = svgElement.getAttribute('height');
+
+            let totalHeight = parseInt(svgHeight);
+            let titleOffset = 0;
+
+            if (includeTitle) {
+                titleOffset = 60;
+                totalHeight += titleOffset;
+            }
+
+            if (includeLegend) {
+                const categories = [...new Set(chartData.map(d => d.category))];
+                if (categories.length > 1) {
+                    totalHeight += 60;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = parseInt(svgWidth) * resolution;
+            canvas.height = totalHeight * resolution;
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(resolution, resolution);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (includeTitle) {
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 20px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(config.title, parseInt(svgWidth) / 2, 30);
+
+                ctx.fillStyle = '#64748b';
+                ctx.font = '14px Inter, sans-serif';
+                ctx.fillText(config.subtitle, parseInt(svgWidth) / 2, 50);
+            }
+
+            const svgData = new XMLSerializer().serializeToString(svgClone);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, 0, titleOffset);
+
+                if (includeLegend) {
+                    const categories = [...new Set(chartData.map(d => d.category))];
+                    if (categories.length > 1) {
+                        const legendY = parseInt(svgHeight) + titleOffset + 20;
+                        const legendWidth = categories.length * 100;
+                        const startX = (parseInt(svgWidth) - legendWidth) / 2;
+
+                        categories.forEach((cat, i) => {
+                            const x = startX + i * 100;
+                            ctx.beginPath();
+                            ctx.arc(x + 8, legendY + 8, 6, 0, Math.PI * 2);
+                            ctx.fillStyle = config.categoryColors[cat];
+                            ctx.fill();
+                            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                            ctx.stroke();
+
+                            ctx.fillStyle = '#64748b';
+                            ctx.font = '12px Inter, sans-serif';
+                            ctx.textAlign = 'left';
+                            ctx.fillText(cat, x + 20, legendY + 12);
+                        });
+                    }
+                }
+
+                const link = document.createElement('a');
+                link.download = `${config.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_matrix.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                URL.revokeObjectURL(url);
+                showToast('PNG downloaded successfully', 'success');
+            };
+
+            img.src = url;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const text = document.getElementById('toastText');
+
+            toast.className = 'toast ' + type;
+            text.textContent = message;
+            toast.classList.add('visible');
+
+            setTimeout(() => {
+                toast.classList.remove('visible');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

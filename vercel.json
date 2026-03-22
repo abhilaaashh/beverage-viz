@@ -1,7 +1,8 @@
 {
   "rewrites": [
     { "source": "/matrix", "destination": "/matrix-maker.html" },
-    { "source": "/dashboard", "destination": "/dashboard/index.html" }
+    { "source": "/dashboard", "destination": "/dashboard/index.html" },
+    { "source": "/custom", "destination": "/custom-matrix.html" }
   ],
   "headers": [
     {
