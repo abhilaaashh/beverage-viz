@@ -1514,22 +1514,74 @@
             const catIdx = headers.findIndex(h => h.includes('category') || h.includes('cat') || h.includes('type') || h.includes('group') || h.includes('segment'));
             const sizeIdx = headers.findIndex(h => h === 'size' || h.includes('bubble') || h.includes('radius') || h.includes('weight'));
 
-            // Check for drift columns (X1, Y1, X2, Y2)
-            const x1Idx = headers.findIndex(h => h === 'x1' || h === 'xstart' || h === 'x_start' || h.includes('cagr') && h.includes('1') || h.includes('start'));
-            const y1Idx = headers.findIndex(h => h === 'y1' || h === 'ystart' || h === 'y_start' || h.includes('eng') && h.includes('1'));
-            const x2Idx = headers.findIndex(h => h === 'x2' || h === 'xend' || h === 'x_end' || h.includes('cagr') && h.includes('2') || h.includes('end') && !h.includes('leg'));
-            const y2Idx = headers.findIndex(h => h === 'y2' || h === 'yend' || h === 'y_end' || h.includes('eng') && h.includes('2'));
+            // Helper to check if a header matches X-axis patterns
+            const isXHeader = (h) => {
+                const normalized = h.replace(/[-_\s]/g, '').toLowerCase();
+                return normalized === 'x' || 
+                       normalized === 'xvalue' || 
+                       normalized === 'xval' ||
+                       h.includes('cagr') || 
+                       h.includes('growth') || 
+                       h.includes('rate') ||
+                       normalized === 'value1' ||
+                       normalized === 'col1' ||
+                       normalized === 'column1';
+            };
+            
+            // Helper to check if a header matches Y-axis patterns
+            const isYHeader = (h) => {
+                const normalized = h.replace(/[-_\s]/g, '').toLowerCase();
+                return normalized === 'y' || 
+                       normalized === 'yvalue' || 
+                       normalized === 'yval' ||
+                       h.includes('engagement') || 
+                       (h.includes('eng') && !h.includes('legend')) || 
+                       h.includes('volume') ||
+                       h.includes('revenue') ||
+                       h.includes('sales') ||
+                       h.includes('market') ||
+                       h.includes('score') ||
+                       normalized === 'value2' ||
+                       normalized === 'col2' ||
+                       normalized === 'column2';
+            };
 
-            // Standard single-point columns
-            const xIdx = headers.findIndex(h => (h === 'x' || h.includes('cagr') || h.includes('growth') || h === 'value1') && !h.includes('1') && !h.includes('2'));
-            const yIdx = headers.findIndex(h => (h === 'y' || h.includes('engagement') || h.includes('eng') || h === 'value2') && !h.includes('1') && !h.includes('2'));
+            // Check for drift columns (X1, Y1, X2, Y2)
+            const x1Idx = headers.findIndex(h => h === 'x1' || h === 'xstart' || h === 'x_start' || (h.includes('cagr') && h.includes('1')) || (h.includes('x') && h.includes('start')));
+            const y1Idx = headers.findIndex(h => h === 'y1' || h === 'ystart' || h === 'y_start' || (h.includes('eng') && h.includes('1')) || (h.includes('y') && h.includes('start')));
+            const x2Idx = headers.findIndex(h => h === 'x2' || h === 'xend' || h === 'x_end' || (h.includes('cagr') && h.includes('2')) || (h.includes('x') && h.includes('end') && !h.includes('leg')));
+            const y2Idx = headers.findIndex(h => h === 'y2' || h === 'yend' || h === 'y_end' || (h.includes('eng') && h.includes('2')) || (h.includes('y') && h.includes('end')));
+
+            // Standard single-point columns - use helper functions
+            let xIdx = headers.findIndex(h => isXHeader(h) && !h.includes('1') && !h.includes('2'));
+            let yIdx = headers.findIndex(h => isYHeader(h) && !h.includes('1') && !h.includes('2'));
+
+            // Fallback: if no named X/Y columns found, use positional detection
+            // Assume: first column = name, then look for first two numeric columns
+            if (xIdx === -1 || yIdx === -1) {
+                const numericCols = [];
+                for (let i = 1; i < lines.length && numericCols.length < 3; i++) {
+                    const cols = lines[i].split(delimiter).map(c => c.trim());
+                    for (let j = 0; j < cols.length; j++) {
+                        const val = parseFloat(cols[j]?.replace(/[,%]/g, ''));
+                        if (!isNaN(val) && !numericCols.includes(j)) {
+                            numericCols.push(j);
+                        }
+                    }
+                }
+                // If we found at least 2 numeric columns, use them as X and Y
+                if (numericCols.length >= 2) {
+                    if (xIdx === -1) xIdx = numericCols[0];
+                    if (yIdx === -1) yIdx = numericCols[1];
+                }
+            }
 
             // Determine if this is drift data
             const hasDriftColumns = x1Idx !== -1 && y1Idx !== -1 && x2Idx !== -1 && y2Idx !== -1;
             const hasStandardColumns = xIdx !== -1 && yIdx !== -1;
 
             if (!hasDriftColumns && !hasStandardColumns) {
-                showToast('Could not find X and Y value columns', 'error');
+                showToast('Could not find X and Y value columns. Use headers like "Name, X, Y" or numeric columns.', 'error');
                 return;
             }
 
