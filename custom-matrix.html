@@ -2118,7 +2118,6 @@
             // Draw bubbles (or drift visualization)
             const tooltip = d3.select('#tooltip');
             const bubbleOpacity = config.bubbleOpacity / 100;
-            const hasDriftData = chartData.some(d => d.hasDrift && d.x2Value !== undefined);
 
             if (config.driftMode && hasDriftData) {
                 // DRIFT MODE: Draw arrows and connected dots
