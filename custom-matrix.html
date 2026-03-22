@@ -499,6 +499,98 @@
             color: #94a3b8;
         }
 
+        /* Column Mapping Modal */
+        .column-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .column-modal-overlay.visible {
+            display: flex;
+        }
+
+        .column-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+        }
+
+        .column-modal h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+
+        .column-modal-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
+        .column-mapping-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .column-mapping-row label {
+            flex: 0 0 100px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .column-mapping-row select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: white;
+        }
+
+        .column-preview {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 16px 0;
+            font-size: 0.75rem;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .column-preview-title {
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .column-preview-row {
+            display: flex;
+            gap: 16px;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .column-modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
         .data-table-mini {
             width: 100%;
             border-collapse: collapse;
@@ -1372,6 +1464,45 @@
         <span id="toastText">Success!</span>
     </div>
 
+    <!-- Column Mapping Modal -->
+    <div class="column-modal-overlay" id="columnModalOverlay">
+        <div class="column-modal">
+            <h3>Map Your Columns</h3>
+            <p class="column-modal-subtitle">Select which columns to use for the chart</p>
+            
+            <div class="column-mapping-row">
+                <label>Name/Label:</label>
+                <select id="colMapName"></select>
+            </div>
+            <div class="column-mapping-row">
+                <label>X Value:</label>
+                <select id="colMapX"></select>
+            </div>
+            <div class="column-mapping-row">
+                <label>Y Value:</label>
+                <select id="colMapY"></select>
+            </div>
+            <div class="column-mapping-row">
+                <label>Category:</label>
+                <select id="colMapCategory"></select>
+            </div>
+            <div class="column-mapping-row">
+                <label>Size (optional):</label>
+                <select id="colMapSize"></select>
+            </div>
+            
+            <div class="column-preview" id="columnPreview">
+                <div class="column-preview-title">Preview (first 3 rows)</div>
+                <div id="previewContent"></div>
+            </div>
+            
+            <div class="column-modal-actions">
+                <button class="btn btn-secondary" onclick="closeColumnModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmColumnMapping()">Import Data</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Configuration state
         const config = {
@@ -1495,96 +1626,116 @@
         function processFile(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                parseAndLoadData(e.target.result);
+                showColumnMappingModal(e.target.result);
             };
             reader.readAsText(file);
         }
 
-        function parseAndLoadData(text) {
+        // Store pending import data
+        let pendingImportData = null;
+
+        function showColumnMappingModal(text) {
             const lines = text.trim().split('\n');
             if (lines.length < 2) {
-                showToast('Invalid data format', 'error');
+                showToast('Invalid data format - need at least a header row and one data row', 'error');
                 return;
             }
 
             const delimiter = text.includes('\t') ? '\t' : ',';
-            const headers = lines[0].toLowerCase().split(delimiter).map(h => h.trim());
+            const headers = lines[0].split(delimiter).map(h => h.trim());
+            const headersLower = headers.map(h => h.toLowerCase());
 
-            const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('label') || h.includes('item'));
-            const catIdx = headers.findIndex(h => h.includes('category') || h.includes('cat') || h.includes('type') || h.includes('group') || h.includes('segment'));
-            const sizeIdx = headers.findIndex(h => h === 'size' || h.includes('bubble') || h.includes('radius') || h.includes('weight'));
+            // Store for later use
+            pendingImportData = { text, lines, delimiter, headers };
 
-            // Helper to check if a header matches X-axis patterns
-            const isXHeader = (h) => {
-                const normalized = h.replace(/[-_\s]/g, '').toLowerCase();
-                return normalized === 'x' || 
-                       normalized === 'xvalue' || 
-                       normalized === 'xval' ||
-                       h.includes('cagr') || 
-                       h.includes('growth') || 
-                       h.includes('rate') ||
-                       normalized === 'value1' ||
-                       normalized === 'col1' ||
-                       normalized === 'column1';
-            };
-            
-            // Helper to check if a header matches Y-axis patterns
-            const isYHeader = (h) => {
-                const normalized = h.replace(/[-_\s]/g, '').toLowerCase();
-                return normalized === 'y' || 
-                       normalized === 'yvalue' || 
-                       normalized === 'yval' ||
-                       h.includes('engagement') || 
-                       (h.includes('eng') && !h.includes('legend')) || 
-                       h.includes('volume') ||
-                       h.includes('revenue') ||
-                       h.includes('sales') ||
-                       h.includes('market') ||
-                       h.includes('score') ||
-                       normalized === 'value2' ||
-                       normalized === 'col2' ||
-                       normalized === 'column2';
-            };
+            // Populate dropdowns
+            const selects = ['colMapName', 'colMapX', 'colMapY', 'colMapCategory', 'colMapSize'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = '<option value="-1">(none)</option>';
+                headers.forEach((h, i) => {
+                    select.innerHTML += `<option value="${i}">${h}</option>`;
+                });
+            });
 
-            // Check for drift columns (X1, Y1, X2, Y2)
-            const x1Idx = headers.findIndex(h => h === 'x1' || h === 'xstart' || h === 'x_start' || (h.includes('cagr') && h.includes('1')) || (h.includes('x') && h.includes('start')));
-            const y1Idx = headers.findIndex(h => h === 'y1' || h === 'ystart' || h === 'y_start' || (h.includes('eng') && h.includes('1')) || (h.includes('y') && h.includes('start')));
-            const x2Idx = headers.findIndex(h => h === 'x2' || h === 'xend' || h === 'x_end' || (h.includes('cagr') && h.includes('2')) || (h.includes('x') && h.includes('end') && !h.includes('leg')));
-            const y2Idx = headers.findIndex(h => h === 'y2' || h === 'yend' || h === 'y_end' || (h.includes('eng') && h.includes('2')) || (h.includes('y') && h.includes('end')));
+            // Auto-detect best matches
+            const detectName = headersLower.findIndex(h => h.includes('name') || h.includes('label') || h.includes('item') || h.includes('product') || h.includes('brand'));
+            const detectCat = headersLower.findIndex(h => h.includes('category') || h.includes('cat') || h.includes('type') || h.includes('group') || h.includes('segment'));
+            const detectSize = headersLower.findIndex(h => h === 'size' || h.includes('bubble') || h.includes('radius') || h.includes('weight'));
 
-            // Standard single-point columns - use helper functions
-            let xIdx = headers.findIndex(h => isXHeader(h) && !h.includes('1') && !h.includes('2'));
-            let yIdx = headers.findIndex(h => isYHeader(h) && !h.includes('1') && !h.includes('2'));
-
-            // Fallback: if no named X/Y columns found, use positional detection
-            // Assume: first column = name, then look for first two numeric columns
-            if (xIdx === -1 || yIdx === -1) {
-                const numericCols = [];
-                for (let i = 1; i < lines.length && numericCols.length < 3; i++) {
-                    const cols = lines[i].split(delimiter).map(c => c.trim());
-                    for (let j = 0; j < cols.length; j++) {
-                        const val = parseFloat(cols[j]?.replace(/[,%]/g, ''));
-                        if (!isNaN(val) && !numericCols.includes(j)) {
-                            numericCols.push(j);
-                        }
+            // Find numeric columns for X/Y
+            const numericCols = [];
+            for (let i = 1; i < Math.min(lines.length, 4); i++) {
+                const cols = lines[i].split(delimiter).map(c => c.trim());
+                for (let j = 0; j < cols.length; j++) {
+                    const val = parseFloat(cols[j]?.replace(/[,%]/g, ''));
+                    if (!isNaN(val) && !numericCols.includes(j)) {
+                        numericCols.push(j);
                     }
-                }
-                // If we found at least 2 numeric columns, use them as X and Y
-                if (numericCols.length >= 2) {
-                    if (xIdx === -1) xIdx = numericCols[0];
-                    if (yIdx === -1) yIdx = numericCols[1];
                 }
             }
 
-            // Determine if this is drift data
-            const hasDriftColumns = x1Idx !== -1 && y1Idx !== -1 && x2Idx !== -1 && y2Idx !== -1;
-            const hasStandardColumns = xIdx !== -1 && yIdx !== -1;
+            // Set defaults
+            document.getElementById('colMapName').value = detectName >= 0 ? detectName : 0;
+            document.getElementById('colMapX').value = numericCols.length > 0 ? numericCols[0] : -1;
+            document.getElementById('colMapY').value = numericCols.length > 1 ? numericCols[1] : -1;
+            document.getElementById('colMapCategory').value = detectCat >= 0 ? detectCat : -1;
+            document.getElementById('colMapSize').value = detectSize >= 0 ? detectSize : -1;
 
-            if (!hasDriftColumns && !hasStandardColumns) {
-                showToast('Could not find X and Y value columns. Use headers like "Name, X, Y" or numeric columns.', 'error');
+            // Show preview
+            updateColumnPreview();
+
+            // Add change listeners for preview update
+            selects.forEach(id => {
+                document.getElementById(id).addEventListener('change', updateColumnPreview);
+            });
+
+            // Show modal
+            document.getElementById('columnModalOverlay').classList.add('visible');
+        }
+
+        function updateColumnPreview() {
+            if (!pendingImportData) return;
+            const { lines, delimiter, headers } = pendingImportData;
+            
+            const nameIdx = parseInt(document.getElementById('colMapName').value);
+            const xIdx = parseInt(document.getElementById('colMapX').value);
+            const yIdx = parseInt(document.getElementById('colMapY').value);
+            const catIdx = parseInt(document.getElementById('colMapCategory').value);
+
+            let html = '';
+            for (let i = 1; i < Math.min(lines.length, 4); i++) {
+                const cols = lines[i].split(delimiter).map(c => c.trim());
+                const name = nameIdx >= 0 ? cols[nameIdx] : `Row ${i}`;
+                const x = xIdx >= 0 ? cols[xIdx] : '-';
+                const y = yIdx >= 0 ? cols[yIdx] : '-';
+                const cat = catIdx >= 0 ? cols[catIdx] : '-';
+                html += `<div class="column-preview-row"><span><b>${name}</b></span><span>X: ${x}</span><span>Y: ${y}</span><span>Cat: ${cat}</span></div>`;
+            }
+            document.getElementById('previewContent').innerHTML = html;
+        }
+
+        function closeColumnModal() {
+            document.getElementById('columnModalOverlay').classList.remove('visible');
+            pendingImportData = null;
+        }
+
+        function confirmColumnMapping() {
+            if (!pendingImportData) return;
+            
+            const nameIdx = parseInt(document.getElementById('colMapName').value);
+            const xIdx = parseInt(document.getElementById('colMapX').value);
+            const yIdx = parseInt(document.getElementById('colMapY').value);
+            const catIdx = parseInt(document.getElementById('colMapCategory').value);
+            const sizeIdx = parseInt(document.getElementById('colMapSize').value);
+
+            if (xIdx === -1 || yIdx === -1) {
+                showToast('Please select X and Y value columns', 'error');
                 return;
             }
 
+            const { lines, delimiter } = pendingImportData;
+            
             chartData = [];
             for (let i = 1; i < lines.length; i++) {
                 const cols = lines[i].split(delimiter).map(c => c.trim());
@@ -1592,51 +1743,24 @@
 
                 const name = nameIdx >= 0 ? cols[nameIdx] : `Item ${i}`;
                 const category = catIdx >= 0 ? cols[catIdx] : 'Default';
+                const xVal = parseFloat(cols[xIdx]?.replace(/[,%]/g, ''));
+                const yVal = parseFloat(cols[yIdx]?.replace(/[,%]/g, ''));
                 const sizeVal = sizeIdx >= 0 ? parseFloat(cols[sizeIdx]?.replace(/[,%]/g, '')) : null;
 
-                if (hasDriftColumns) {
-                    // Parse drift data
-                    const x1 = parseFloat(cols[x1Idx]?.replace(/[,%]/g, ''));
-                    const y1 = parseFloat(cols[y1Idx]?.replace(/[,%]/g, ''));
-                    const x2 = parseFloat(cols[x2Idx]?.replace(/[,%]/g, ''));
-                    const y2 = parseFloat(cols[y2Idx]?.replace(/[,%]/g, ''));
-
-                    if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
-                        chartData.push({ 
-                            name, 
-                            xValue: x1,
-                            yValue: y1,
-                            x2Value: x2,
-                            y2Value: y2,
-                            category, 
-                            sizeValue: !isNaN(sizeVal) ? sizeVal : y1,
-                            hasDrift: true,
-                            index: chartData.length 
-                        });
-                    }
-                } else {
-                    // Parse standard single-point data
-                    const xVal = parseFloat(cols[xIdx]?.replace(/[,%]/g, ''));
-                    const yVal = parseFloat(cols[yIdx]?.replace(/[,%]/g, ''));
-
-                    if (!isNaN(xVal) && !isNaN(yVal)) {
-                        chartData.push({ 
-                            name, 
-                            xValue: xVal, 
-                            yValue: yVal, 
-                            category, 
-                            sizeValue: !isNaN(sizeVal) ? sizeVal : yVal,
-                            hasDrift: false,
-                            index: chartData.length 
-                        });
-                    }
+                if (!isNaN(xVal) && !isNaN(yVal)) {
+                    chartData.push({ 
+                        name, 
+                        xValue: xVal, 
+                        yValue: yVal, 
+                        category, 
+                        sizeValue: !isNaN(sizeVal) ? sizeVal : yVal,
+                        hasDrift: false,
+                        index: chartData.length 
+                    });
                 }
             }
 
-            // Auto-enable drift mode if drift data detected
-            if (hasDriftColumns && chartData.length > 0 && chartData[0].hasDrift) {
-                document.getElementById('driftMode').checked = true;
-            }
+            closeColumnModal();
 
             if (chartData.length === 0) {
                 showToast('No valid data points found', 'error');
@@ -1648,6 +1772,11 @@
             updateThresholdSliders();
             updateChart();
             showToast(`Loaded ${chartData.length} data points`, 'success');
+        }
+
+        // Legacy function for paste - now shows modal too
+        function parseAndLoadData(text) {
+            showColumnMappingModal(text);
         }
 
         function loadSampleData() {
