@@ -1018,6 +1018,155 @@
                     </div>
                 </div>
 
+                <!-- Bubble/Point Style Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Bubble Style</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="form-group">
+                            <label class="form-label">Size Mode</label>
+                            <select class="form-input" id="sizeMode" onchange="updateChart()">
+                                <option value="scaled">Scale by Y-Value</option>
+                                <option value="fixed">Fixed Size</option>
+                                <option value="sizeColumn">Scale by Size Column</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Min Size (px)</label>
+                                <input type="number" class="form-input" id="bubbleMinSize" value="8" min="2" max="50" oninput="updateChart()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Max Size (px)</label>
+                                <input type="number" class="form-input" id="bubbleMaxSize" value="28" min="5" max="80" oninput="updateChart()">
+                            </div>
+                        </div>
+                        <div class="form-group" id="fixedSizeGroup" style="display: none;">
+                            <label class="form-label">Fixed Size (px)</label>
+                            <input type="range" class="threshold-slider" id="fixedBubbleSize" min="5" max="50" value="16" oninput="document.getElementById('fixedSizeValue').textContent = this.value + 'px'; updateChart()">
+                            <div class="threshold-value">
+                                <span>5px</span>
+                                <span id="fixedSizeValue">16px</span>
+                                <span>50px</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Bubble Opacity</label>
+                            <input type="range" class="threshold-slider" id="bubbleOpacity" min="20" max="100" value="100" oninput="document.getElementById('opacityValue').textContent = this.value + '%'; updateChart()">
+                            <div class="threshold-value">
+                                <span>20%</span>
+                                <span id="opacityValue">100%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Border Width</label>
+                                <input type="number" class="form-input" id="bubbleStrokeWidth" value="2" min="0" max="6" oninput="updateChart()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Border Color</label>
+                                <input type="color" class="color-input" id="bubbleStrokeColor" value="#ffffff" style="width: 100%; height: 38px;" onchange="updateChart()">
+                            </div>
+                        </div>
+                        <div class="option-row" style="margin-top: 10px;">
+                            <span class="option-label">Show Shadow</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="bubbleShadow" checked onchange="updateChart()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Labels Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Labels</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="option-row">
+                            <span class="option-label">Show Labels</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showLabels" checked onchange="updateChart()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label class="form-label">Label Font Size (px)</label>
+                            <input type="number" class="form-input" id="labelFontSize" value="11" min="8" max="18" oninput="updateChart()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Label Length</label>
+                            <input type="number" class="form-input" id="maxLabelLength" value="12" min="5" max="30" oninput="updateChart()">
+                        </div>
+                        <div class="option-row">
+                            <span class="option-label">Show Label Background</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showLabelBg" checked onchange="updateChart()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid & Lines Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Grid & Lines</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="option-row">
+                            <span class="option-label">Show Grid</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showGrid" checked onchange="updateChart()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label class="form-label">Grid Opacity</label>
+                            <input type="range" class="threshold-slider" id="gridOpacity" min="0" max="30" value="6" oninput="document.getElementById('gridOpacityValue').textContent = this.value + '%'; updateChart()">
+                            <div class="threshold-value">
+                                <span>0%</span>
+                                <span id="gridOpacityValue">6%</span>
+                                <span>30%</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Threshold Line Style</label>
+                            <select class="form-input" id="thresholdLineStyle" onchange="updateChart()">
+                                <option value="dashed">Dashed</option>
+                                <option value="solid">Solid</option>
+                                <option value="dotted">Dotted</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Line Width</label>
+                                <input type="number" class="form-input" id="thresholdLineWidth" value="1.5" min="0.5" max="5" step="0.5" oninput="updateChart()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Line Color</label>
+                                <input type="color" class="color-input" id="thresholdLineColor" value="#1a1a1a" style="width: 100%; height: 38px;" onchange="updateChart()">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quadrant Label Size</label>
+                            <input type="number" class="form-input" id="quadrantLabelSize" value="13" min="8" max="20" oninput="updateChart()">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Download Panel -->
                 <div class="panel">
                     <div class="panel-header" onclick="togglePanel(this)">
@@ -1051,9 +1200,9 @@
                                 </label>
                             </div>
                             <div class="option-row">
-                                <span class="option-label">Show Labels</span>
+                                <span class="option-label">Transparent Background</span>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" id="showLabels" checked onchange="updateChart()">
+                                    <input type="checkbox" id="transparentBg">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -1126,7 +1275,27 @@
                 bottomRight: { color: '#FFE0B2', label: 'Early Bets' }
             },
             categoryColors: {},
-            showLabels: true
+            showLabels: true,
+            // Bubble style
+            sizeMode: 'scaled',
+            bubbleMinSize: 8,
+            bubbleMaxSize: 28,
+            fixedBubbleSize: 16,
+            bubbleOpacity: 100,
+            bubbleStrokeWidth: 2,
+            bubbleStrokeColor: '#ffffff',
+            bubbleShadow: true,
+            // Labels
+            labelFontSize: 11,
+            maxLabelLength: 12,
+            showLabelBg: true,
+            // Grid & Lines
+            showGrid: true,
+            gridOpacity: 6,
+            thresholdLineStyle: 'dashed',
+            thresholdLineWidth: 1.5,
+            thresholdLineColor: '#1a1a1a',
+            quadrantLabelSize: 13
         };
 
         // Data storage
@@ -1218,8 +1387,9 @@
 
             const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('label') || h.includes('item'));
             const xIdx = headers.findIndex(h => h.includes('x') || h.includes('cagr') || h.includes('growth') || h === 'value1');
-            const yIdx = headers.findIndex(h => h.includes('y') || h.includes('engagement') || h.includes('eng') || h === 'value2' || h.includes('size'));
+            const yIdx = headers.findIndex(h => h.includes('y') || h.includes('engagement') || h.includes('eng') || h === 'value2');
             const catIdx = headers.findIndex(h => h.includes('category') || h.includes('cat') || h.includes('type') || h.includes('group') || h.includes('segment'));
+            const sizeIdx = headers.findIndex(h => h === 'size' || h.includes('bubble') || h.includes('radius') || h.includes('weight'));
 
             if (xIdx === -1 || yIdx === -1) {
                 showToast('Could not find X and Y value columns', 'error');
@@ -1235,9 +1405,17 @@
                 const xVal = parseFloat(cols[xIdx]?.replace(/[,%]/g, ''));
                 const yVal = parseFloat(cols[yIdx]?.replace(/[,%]/g, ''));
                 const category = catIdx >= 0 ? cols[catIdx] : 'Default';
+                const sizeVal = sizeIdx >= 0 ? parseFloat(cols[sizeIdx]?.replace(/[,%]/g, '')) : null;
 
                 if (!isNaN(xVal) && !isNaN(yVal)) {
-                    chartData.push({ name, xValue: xVal, yValue: yVal, category, index: chartData.length });
+                    chartData.push({ 
+                        name, 
+                        xValue: xVal, 
+                        yValue: yVal, 
+                        category, 
+                        sizeValue: !isNaN(sizeVal) ? sizeVal : yVal,
+                        index: chartData.length 
+                    });
                 }
             }
 
@@ -1441,6 +1619,33 @@
             config.yMin = document.getElementById('yMin').value ? parseFloat(document.getElementById('yMin').value) : null;
             config.yMax = document.getElementById('yMax').value ? parseFloat(document.getElementById('yMax').value) : null;
 
+            // Bubble style settings
+            config.sizeMode = document.getElementById('sizeMode').value;
+            config.bubbleMinSize = parseInt(document.getElementById('bubbleMinSize').value) || 8;
+            config.bubbleMaxSize = parseInt(document.getElementById('bubbleMaxSize').value) || 28;
+            config.fixedBubbleSize = parseInt(document.getElementById('fixedBubbleSize').value) || 16;
+            config.bubbleOpacity = parseInt(document.getElementById('bubbleOpacity').value) || 100;
+            config.bubbleStrokeWidth = parseFloat(document.getElementById('bubbleStrokeWidth').value) || 2;
+            config.bubbleStrokeColor = document.getElementById('bubbleStrokeColor').value;
+            config.bubbleShadow = document.getElementById('bubbleShadow').checked;
+
+            // Labels settings
+            config.labelFontSize = parseInt(document.getElementById('labelFontSize').value) || 11;
+            config.maxLabelLength = parseInt(document.getElementById('maxLabelLength').value) || 12;
+            config.showLabelBg = document.getElementById('showLabelBg').checked;
+
+            // Grid & Lines settings
+            config.showGrid = document.getElementById('showGrid').checked;
+            config.gridOpacity = parseInt(document.getElementById('gridOpacity').value) || 6;
+            config.thresholdLineStyle = document.getElementById('thresholdLineStyle').value;
+            config.thresholdLineWidth = parseFloat(document.getElementById('thresholdLineWidth').value) || 1.5;
+            config.thresholdLineColor = document.getElementById('thresholdLineColor').value;
+            config.quadrantLabelSize = parseInt(document.getElementById('quadrantLabelSize').value) || 13;
+
+            // Show/hide fixed size slider based on size mode
+            const fixedSizeGroup = document.getElementById('fixedSizeGroup');
+            fixedSizeGroup.style.display = config.sizeMode === 'fixed' ? 'block' : 'none';
+
             // Update display title
             document.getElementById('displayTitle').textContent = config.title;
             document.getElementById('displaySubtitle').textContent = config.subtitle;
@@ -1470,6 +1675,7 @@
 
             const xValues = chartData.map(d => d.xValue);
             const yValues = chartData.map(d => d.yValue);
+            const sizeValues = chartData.map(d => d.sizeValue || d.yValue);
 
             // Calculate bounds
             let xMin = config.xMin !== null ? config.xMin : d3.min(xValues);
@@ -1507,10 +1713,12 @@
                 .append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
-            // Add shadow filter
+            // Add shadow filter (only if enabled)
             const defs = svg.append('defs');
-            const filter = defs.append('filter').attr('id', 'bubbleShadow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
-            filter.append('feDropShadow').attr('dx', 0).attr('dy', 2).attr('stdDeviation', 3).attr('flood-opacity', 0.2);
+            if (config.bubbleShadow) {
+                const filter = defs.append('filter').attr('id', 'bubbleShadow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+                filter.append('feDropShadow').attr('dx', 0).attr('dy', 2).attr('stdDeviation', 3).attr('flood-opacity', 0.2);
+            }
 
             // Draw quadrants
             const quadrantData = [
@@ -1531,35 +1739,50 @@
                 .attr('height', d => d.h)
                 .attr('fill', d => d.color);
 
-            // Draw grid
-            const gridGroup = svg.append('g').attr('class', 'grid-lines');
-            const xTicks = xScale.ticks(8);
-            const yTicks = yScale.ticks(6);
+            // Draw grid (if enabled)
+            if (config.showGrid) {
+                const gridGroup = svg.append('g').attr('class', 'grid-lines');
+                const xTicks = xScale.ticks(8);
+                const yTicks = yScale.ticks(6);
+                const gridColor = `rgba(0,0,0,${config.gridOpacity / 100})`;
 
-            xTicks.forEach(tick => {
-                gridGroup.append('line')
-                    .attr('x1', xScale(tick)).attr('y1', 0)
-                    .attr('x2', xScale(tick)).attr('y2', height)
-                    .attr('stroke', 'rgba(0,0,0,0.06)').attr('stroke-width', 1);
-            });
+                xTicks.forEach(tick => {
+                    gridGroup.append('line')
+                        .attr('x1', xScale(tick)).attr('y1', 0)
+                        .attr('x2', xScale(tick)).attr('y2', height)
+                        .attr('stroke', gridColor).attr('stroke-width', 1);
+                });
 
-            yTicks.forEach(tick => {
-                gridGroup.append('line')
-                    .attr('x1', 0).attr('y1', yScale(tick))
-                    .attr('x2', width).attr('y2', yScale(tick))
-                    .attr('stroke', 'rgba(0,0,0,0.06)').attr('stroke-width', 1);
-            });
+                yTicks.forEach(tick => {
+                    gridGroup.append('line')
+                        .attr('x1', 0).attr('y1', yScale(tick))
+                        .attr('x2', width).attr('y2', yScale(tick))
+                        .attr('stroke', gridColor).attr('stroke-width', 1);
+                });
+            }
 
-            // Draw median lines
+            // Calculate threshold line dash pattern
+            let dashArray;
+            switch (config.thresholdLineStyle) {
+                case 'solid': dashArray = 'none'; break;
+                case 'dotted': dashArray = '2,4'; break;
+                default: dashArray = '6,4'; break;
+            }
+
+            // Draw threshold lines
             svg.append('line')
                 .attr('x1', xScale(xThreshold)).attr('y1', 0)
                 .attr('x2', xScale(xThreshold)).attr('y2', height)
-                .attr('stroke', '#1A1A1A').attr('stroke-width', 1.5).attr('stroke-dasharray', '6,4');
+                .attr('stroke', config.thresholdLineColor)
+                .attr('stroke-width', config.thresholdLineWidth)
+                .attr('stroke-dasharray', dashArray);
 
             svg.append('line')
                 .attr('x1', 0).attr('y1', yScale(yThreshold))
                 .attr('x2', width).attr('y2', yScale(yThreshold))
-                .attr('stroke', '#1A1A1A').attr('stroke-width', 1.5).attr('stroke-dasharray', '6,4');
+                .attr('stroke', config.thresholdLineColor)
+                .attr('stroke-width', config.thresholdLineWidth)
+                .attr('stroke-dasharray', dashArray);
 
             // Draw quadrant labels
             const quadrantLabels = [
@@ -1577,6 +1800,7 @@
                 .attr('x', d => d.x)
                 .attr('y', d => d.y)
                 .attr('text-anchor', 'middle')
+                .style('font-size', config.quadrantLabelSize + 'px')
                 .text(d => d.text);
 
             // Draw axes
@@ -1614,13 +1838,30 @@
                 .attr('text-anchor', 'middle')
                 .text(config.yAxisLabel);
 
-            // Calculate bubble sizes
-            const sizeScale = d3.scaleSqrt()
-                .domain([d3.min(yValues), d3.max(yValues)])
-                .range([8, 28]);
+            // Calculate bubble sizes based on mode
+            let sizeScale;
+            if (config.sizeMode === 'fixed') {
+                sizeScale = () => config.fixedBubbleSize;
+            } else if (config.sizeMode === 'sizeColumn') {
+                sizeScale = d3.scaleSqrt()
+                    .domain([d3.min(sizeValues), d3.max(sizeValues)])
+                    .range([config.bubbleMinSize, config.bubbleMaxSize]);
+            } else {
+                sizeScale = d3.scaleSqrt()
+                    .domain([d3.min(yValues), d3.max(yValues)])
+                    .range([config.bubbleMinSize, config.bubbleMaxSize]);
+            }
+
+            // Get bubble radius for a data point
+            const getBubbleRadius = (d) => {
+                if (config.sizeMode === 'fixed') return config.fixedBubbleSize;
+                if (config.sizeMode === 'sizeColumn') return sizeScale(d.sizeValue || d.yValue);
+                return sizeScale(d.yValue);
+            };
 
             // Draw bubbles
             const tooltip = d3.select('#tooltip');
+            const bubbleOpacity = config.bubbleOpacity / 100;
 
             svg.selectAll('.bubble')
                 .data(chartData)
@@ -1629,14 +1870,15 @@
                 .attr('class', 'bubble')
                 .attr('cx', d => xScale(d.xValue))
                 .attr('cy', d => yScale(d.yValue))
-                .attr('r', d => sizeScale(d.yValue))
+                .attr('r', d => getBubbleRadius(d))
                 .attr('fill', d => config.categoryColors[d.category] || defaultColors[0])
-                .attr('stroke', 'white')
-                .attr('stroke-width', 2)
-                .attr('filter', 'url(#bubbleShadow)')
+                .attr('fill-opacity', bubbleOpacity)
+                .attr('stroke', config.bubbleStrokeColor)
+                .attr('stroke-width', config.bubbleStrokeWidth)
+                .attr('filter', config.bubbleShadow ? 'url(#bubbleShadow)' : 'none')
                 .style('cursor', 'pointer')
                 .on('mouseover', function(event, d) {
-                    d3.select(this).attr('stroke-width', 3);
+                    d3.select(this).attr('stroke-width', config.bubbleStrokeWidth + 1);
                     tooltip.classed('visible', true)
                         .html(`
                             <div class="tooltip-title">${d.name}</div>
@@ -1660,13 +1902,13 @@
                            .style('top', (event.clientY - rect.top - 10) + 'px');
                 })
                 .on('mouseout', function() {
-                    d3.select(this).attr('stroke-width', 2);
+                    d3.select(this).attr('stroke-width', config.bubbleStrokeWidth);
                     tooltip.classed('visible', false);
                 });
 
             // Draw labels
             if (config.showLabels) {
-                const labelPositions = calculateLabelPositions(chartData, xScale, yScale, sizeScale, xThreshold, yThreshold);
+                const labelPositions = calculateLabelPositions(chartData, xScale, yScale, getBubbleRadius, xThreshold, yThreshold);
 
                 const labelGroups = svg.selectAll('.label-group')
                     .data(labelPositions)
@@ -1687,35 +1929,39 @@
                         .attr('stroke-dasharray', '2,2');
                 }
 
-                labelGroups.append('rect')
-                    .attr('class', 'label-pill')
-                    .attr('x', d => d.textAnchor === 'start' ? d.offsetX - 2 : d.offsetX - 60)
-                    .attr('y', d => d.offsetY - 8)
-                    .attr('width', d => Math.min(d.data.name.length * 6 + 8, 80))
-                    .attr('height', 16)
-                    .attr('rx', 8)
-                    .attr('fill', 'rgba(255,255,255,0.92)')
-                    .attr('stroke', 'rgba(0,0,0,0.08)')
-                    .attr('stroke-width', 1);
+                if (config.showLabelBg) {
+                    labelGroups.append('rect')
+                        .attr('class', 'label-pill')
+                        .attr('x', d => d.textAnchor === 'start' ? d.offsetX - 2 : d.offsetX - 60)
+                        .attr('y', d => d.offsetY - 8)
+                        .attr('width', d => Math.min(d.data.name.length * 6 + 8, 80))
+                        .attr('height', 16)
+                        .attr('rx', 8)
+                        .attr('fill', 'rgba(255,255,255,0.92)')
+                        .attr('stroke', 'rgba(0,0,0,0.08)')
+                        .attr('stroke-width', 1);
+                }
 
+                const maxLen = config.maxLabelLength;
                 labelGroups.append('text')
                     .attr('class', 'trend-label')
                     .attr('x', d => d.offsetX)
                     .attr('y', d => d.offsetY)
                     .attr('dy', '0.35em')
                     .attr('text-anchor', d => d.textAnchor)
-                    .text(d => d.data.name.length > 12 ? d.data.name.substring(0, 11) + '...' : d.data.name);
+                    .style('font-size', config.labelFontSize + 'px')
+                    .text(d => d.data.name.length > maxLen ? d.data.name.substring(0, maxLen - 1) + '...' : d.data.name);
             }
 
             // Update legend
             updateLegend();
         }
 
-        function calculateLabelPositions(data, xScale, yScale, sizeScale, xThreshold, yThreshold) {
+        function calculateLabelPositions(data, xScale, yScale, getBubbleRadius, xThreshold, yThreshold) {
             return data.map(d => {
                 const isLeft = d.xValue <= xThreshold;
                 const isBottom = d.yValue <= yThreshold;
-                const bubbleRadius = sizeScale(d.yValue);
+                const bubbleRadius = getBubbleRadius(d);
                 const offsetX = isLeft ? bubbleRadius + 6 : -(bubbleRadius + 6);
 
                 return {
@@ -1758,6 +2004,7 @@
             const resolution = parseInt(document.getElementById('resolution').value);
             const includeLegend = document.getElementById('includeLegend').checked;
             const includeTitle = document.getElementById('includeTitle').checked;
+            const transparentBg = document.getElementById('transparentBg').checked;
 
             const svgElement = document.querySelector('#chart svg');
             if (!svgElement) {
@@ -1790,8 +2037,11 @@
 
             const ctx = canvas.getContext('2d');
             ctx.scale(resolution, resolution);
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (!transparentBg) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
 
             if (includeTitle) {
                 ctx.fillStyle = '#1e293b';
