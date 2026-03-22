@@ -790,6 +790,65 @@
             font-size: 0.8rem;
         }
 
+        .drift-line {
+            stroke-dasharray: 6,3;
+            opacity: 0.7;
+        }
+
+        .drift-arrow {
+            opacity: 0.8;
+        }
+
+        .year-badge {
+            font-size: 9px;
+            font-weight: 700;
+            pointer-events: none;
+        }
+
+        .drift-info {
+            background: rgba(102, 126, 234, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .drift-info strong {
+            color: #475569;
+        }
+
+        .drift-legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+        }
+
+        .drift-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .drift-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .drift-legend-dot.start {
+            background: currentColor;
+            opacity: 0.9;
+        }
+
+        .drift-legend-dot.end {
+            background: white;
+            border: 2px solid currentColor;
+            opacity: 0.5;
+        }
+
         @media (max-width: 1200px) {
             .main-layout {
                 grid-template-columns: 1fr;
@@ -841,15 +900,21 @@
                             <div class="upload-text">Drop CSV file or click to upload</div>
                             <div class="upload-hint">Columns: Name, X-Value, Y-Value, Category (optional)</div>
                         </div>
-                        <button class="btn btn-secondary btn-sm sample-data-btn" onclick="loadSampleData()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                            </svg>
-                            Load Sample Data
-                        </button>
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="loadSampleData()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                Sample Data
+                            </button>
+                            <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="loadDriftSampleData()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                                Drift Sample
+                            </button>
+                        </div>
                         <div class="data-table-wrapper" id="dataTableWrapper" style="display: none;">
                             <table class="data-table-mini">
                                 <thead>
@@ -871,6 +936,59 @@
                             </svg>
                             Add Row
                         </button>
+                    </div>
+                </div>
+
+                <!-- Drift Mode Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <span class="panel-title">Drift Mode</span>
+                        <svg class="panel-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="panel-content">
+                        <div class="option-row">
+                            <span class="option-label">Enable Drift View</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="driftMode" onchange="updateChart()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div id="driftOptions" style="display: none; margin-top: 12px;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Start Label</label>
+                                    <input type="text" class="form-input" id="driftStartLabel" value="Start" oninput="updateChart()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">End Label</label>
+                                    <input type="text" class="form-input" id="driftEndLabel" value="End" oninput="updateChart()">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Arrow Color (Up)</label>
+                                    <input type="color" class="color-input" id="driftColorUp" value="#10b981" style="width: 100%; height: 36px;" onchange="updateChart()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Arrow Color (Down)</label>
+                                    <input type="color" class="color-input" id="driftColorDown" value="#ef4444" style="width: 100%; height: 36px;" onchange="updateChart()">
+                                </div>
+                            </div>
+                            <div class="option-row" style="margin-top: 8px;">
+                                <span class="option-label">Show Year Badges</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="showYearBadges" checked onchange="updateChart()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="drift-info" id="driftInfo" style="display: none;">
+                            <strong>Drift Data Required:</strong><br>
+                            CSV columns: Name, X1, Y1, X2, Y2, Category<br>
+                            (Start and End positions for each point)
+                        </div>
                     </div>
                 </div>
 
@@ -1295,7 +1413,14 @@
             thresholdLineStyle: 'dashed',
             thresholdLineWidth: 1.5,
             thresholdLineColor: '#1a1a1a',
-            quadrantLabelSize: 13
+            quadrantLabelSize: 13,
+            // Drift mode
+            driftMode: false,
+            driftStartLabel: 'Start',
+            driftEndLabel: 'End',
+            driftColorUp: '#10b981',
+            driftColorDown: '#ef4444',
+            showYearBadges: true
         };
 
         // Data storage
@@ -1386,12 +1511,24 @@
             const headers = lines[0].toLowerCase().split(delimiter).map(h => h.trim());
 
             const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('label') || h.includes('item'));
-            const xIdx = headers.findIndex(h => h.includes('x') || h.includes('cagr') || h.includes('growth') || h === 'value1');
-            const yIdx = headers.findIndex(h => h.includes('y') || h.includes('engagement') || h.includes('eng') || h === 'value2');
             const catIdx = headers.findIndex(h => h.includes('category') || h.includes('cat') || h.includes('type') || h.includes('group') || h.includes('segment'));
             const sizeIdx = headers.findIndex(h => h === 'size' || h.includes('bubble') || h.includes('radius') || h.includes('weight'));
 
-            if (xIdx === -1 || yIdx === -1) {
+            // Check for drift columns (X1, Y1, X2, Y2)
+            const x1Idx = headers.findIndex(h => h === 'x1' || h === 'xstart' || h === 'x_start' || h.includes('cagr') && h.includes('1') || h.includes('start'));
+            const y1Idx = headers.findIndex(h => h === 'y1' || h === 'ystart' || h === 'y_start' || h.includes('eng') && h.includes('1'));
+            const x2Idx = headers.findIndex(h => h === 'x2' || h === 'xend' || h === 'x_end' || h.includes('cagr') && h.includes('2') || h.includes('end') && !h.includes('leg'));
+            const y2Idx = headers.findIndex(h => h === 'y2' || h === 'yend' || h === 'y_end' || h.includes('eng') && h.includes('2'));
+
+            // Standard single-point columns
+            const xIdx = headers.findIndex(h => (h === 'x' || h.includes('cagr') || h.includes('growth') || h === 'value1') && !h.includes('1') && !h.includes('2'));
+            const yIdx = headers.findIndex(h => (h === 'y' || h.includes('engagement') || h.includes('eng') || h === 'value2') && !h.includes('1') && !h.includes('2'));
+
+            // Determine if this is drift data
+            const hasDriftColumns = x1Idx !== -1 && y1Idx !== -1 && x2Idx !== -1 && y2Idx !== -1;
+            const hasStandardColumns = xIdx !== -1 && yIdx !== -1;
+
+            if (!hasDriftColumns && !hasStandardColumns) {
                 showToast('Could not find X and Y value columns', 'error');
                 return;
             }
@@ -1402,21 +1539,51 @@
                 if (cols.length < 2) continue;
 
                 const name = nameIdx >= 0 ? cols[nameIdx] : `Item ${i}`;
-                const xVal = parseFloat(cols[xIdx]?.replace(/[,%]/g, ''));
-                const yVal = parseFloat(cols[yIdx]?.replace(/[,%]/g, ''));
                 const category = catIdx >= 0 ? cols[catIdx] : 'Default';
                 const sizeVal = sizeIdx >= 0 ? parseFloat(cols[sizeIdx]?.replace(/[,%]/g, '')) : null;
 
-                if (!isNaN(xVal) && !isNaN(yVal)) {
-                    chartData.push({ 
-                        name, 
-                        xValue: xVal, 
-                        yValue: yVal, 
-                        category, 
-                        sizeValue: !isNaN(sizeVal) ? sizeVal : yVal,
-                        index: chartData.length 
-                    });
+                if (hasDriftColumns) {
+                    // Parse drift data
+                    const x1 = parseFloat(cols[x1Idx]?.replace(/[,%]/g, ''));
+                    const y1 = parseFloat(cols[y1Idx]?.replace(/[,%]/g, ''));
+                    const x2 = parseFloat(cols[x2Idx]?.replace(/[,%]/g, ''));
+                    const y2 = parseFloat(cols[y2Idx]?.replace(/[,%]/g, ''));
+
+                    if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
+                        chartData.push({ 
+                            name, 
+                            xValue: x1,
+                            yValue: y1,
+                            x2Value: x2,
+                            y2Value: y2,
+                            category, 
+                            sizeValue: !isNaN(sizeVal) ? sizeVal : y1,
+                            hasDrift: true,
+                            index: chartData.length 
+                        });
+                    }
+                } else {
+                    // Parse standard single-point data
+                    const xVal = parseFloat(cols[xIdx]?.replace(/[,%]/g, ''));
+                    const yVal = parseFloat(cols[yIdx]?.replace(/[,%]/g, ''));
+
+                    if (!isNaN(xVal) && !isNaN(yVal)) {
+                        chartData.push({ 
+                            name, 
+                            xValue: xVal, 
+                            yValue: yVal, 
+                            category, 
+                            sizeValue: !isNaN(sizeVal) ? sizeVal : yVal,
+                            hasDrift: false,
+                            index: chartData.length 
+                        });
+                    }
                 }
+            }
+
+            // Auto-enable drift mode if drift data detected
+            if (hasDriftColumns && chartData.length > 0 && chartData[0].hasDrift) {
+                document.getElementById('driftMode').checked = true;
             }
 
             if (chartData.length === 0) {
@@ -1432,19 +1599,20 @@
         }
 
         function loadSampleData() {
+            document.getElementById('driftMode').checked = false;
             chartData = [
-                { name: 'Product A', xValue: 15, yValue: 80, category: 'Premium', index: 0 },
-                { name: 'Product B', xValue: 45, yValue: 120, category: 'Premium', index: 1 },
-                { name: 'Product C', xValue: 8, yValue: 45, category: 'Standard', index: 2 },
-                { name: 'Product D', xValue: 55, yValue: 35, category: 'Budget', index: 3 },
-                { name: 'Product E', xValue: 25, yValue: 95, category: 'Premium', index: 4 },
-                { name: 'Product F', xValue: 65, yValue: 150, category: 'Luxury', index: 5 },
-                { name: 'Product G', xValue: 12, yValue: 60, category: 'Standard', index: 6 },
-                { name: 'Product H', xValue: 38, yValue: 25, category: 'Budget', index: 7 },
-                { name: 'Product I', xValue: 72, yValue: 88, category: 'Luxury', index: 8 },
-                { name: 'Product J', xValue: 5, yValue: 110, category: 'Premium', index: 9 },
-                { name: 'Product K', xValue: 48, yValue: 72, category: 'Standard', index: 10 },
-                { name: 'Product L', xValue: 30, yValue: 42, category: 'Budget', index: 11 }
+                { name: 'Product A', xValue: 15, yValue: 80, category: 'Premium', hasDrift: false, index: 0 },
+                { name: 'Product B', xValue: 45, yValue: 120, category: 'Premium', hasDrift: false, index: 1 },
+                { name: 'Product C', xValue: 8, yValue: 45, category: 'Standard', hasDrift: false, index: 2 },
+                { name: 'Product D', xValue: 55, yValue: 35, category: 'Budget', hasDrift: false, index: 3 },
+                { name: 'Product E', xValue: 25, yValue: 95, category: 'Premium', hasDrift: false, index: 4 },
+                { name: 'Product F', xValue: 65, yValue: 150, category: 'Luxury', hasDrift: false, index: 5 },
+                { name: 'Product G', xValue: 12, yValue: 60, category: 'Standard', hasDrift: false, index: 6 },
+                { name: 'Product H', xValue: 38, yValue: 25, category: 'Budget', hasDrift: false, index: 7 },
+                { name: 'Product I', xValue: 72, yValue: 88, category: 'Luxury', hasDrift: false, index: 8 },
+                { name: 'Product J', xValue: 5, yValue: 110, category: 'Premium', hasDrift: false, index: 9 },
+                { name: 'Product K', xValue: 48, yValue: 72, category: 'Standard', hasDrift: false, index: 10 },
+                { name: 'Product L', xValue: 30, yValue: 42, category: 'Budget', hasDrift: false, index: 11 }
             ];
 
             assignCategoryColors();
@@ -1452,6 +1620,26 @@
             updateThresholdSliders();
             updateChart();
             showToast('Sample data loaded', 'success');
+        }
+
+        function loadDriftSampleData() {
+            document.getElementById('driftMode').checked = true;
+            chartData = [
+                { name: 'Product A', xValue: 15, yValue: 80, x2Value: 22, y2Value: 95, category: 'Premium', hasDrift: true, index: 0 },
+                { name: 'Product B', xValue: 45, yValue: 120, x2Value: 38, y2Value: 145, category: 'Premium', hasDrift: true, index: 1 },
+                { name: 'Product C', xValue: 8, yValue: 45, x2Value: 12, y2Value: 52, category: 'Standard', hasDrift: true, index: 2 },
+                { name: 'Product D', xValue: 55, yValue: 35, x2Value: 48, y2Value: 42, category: 'Budget', hasDrift: true, index: 3 },
+                { name: 'Product E', xValue: 25, yValue: 95, x2Value: 32, y2Value: 88, category: 'Premium', hasDrift: true, index: 4 },
+                { name: 'Product F', xValue: 65, yValue: 150, x2Value: 58, y2Value: 175, category: 'Luxury', hasDrift: true, index: 5 },
+                { name: 'Product G', xValue: 12, yValue: 60, x2Value: 18, y2Value: 55, category: 'Standard', hasDrift: true, index: 6 },
+                { name: 'Product H', xValue: 38, yValue: 25, x2Value: 42, y2Value: 38, category: 'Budget', hasDrift: true, index: 7 }
+            ];
+
+            assignCategoryColors();
+            updateDataTable();
+            updateThresholdSliders();
+            updateChart();
+            showToast('Drift sample data loaded', 'success');
         }
 
         function assignCategoryColors() {
@@ -1497,6 +1685,7 @@
             const wrapper = document.getElementById('dataTableWrapper');
             const tbody = document.getElementById('dataTableBody');
             const addBtn = document.getElementById('addRowBtn');
+            const thead = wrapper.querySelector('thead tr');
 
             if (chartData.length === 0) {
                 wrapper.style.display = 'none';
@@ -1507,22 +1696,63 @@
             wrapper.style.display = 'block';
             addBtn.style.display = 'block';
 
-            tbody.innerHTML = chartData.map((d, i) => `
-                <tr>
-                    <td><input type="text" value="${d.name}" onchange="updateDataPoint(${i}, 'name', this.value)"></td>
-                    <td><input type="number" class="num-input" value="${d.xValue}" onchange="updateDataPoint(${i}, 'xValue', parseFloat(this.value))"></td>
-                    <td><input type="number" class="num-input" value="${d.yValue}" onchange="updateDataPoint(${i}, 'yValue', parseFloat(this.value))"></td>
-                    <td><input type="text" value="${d.category}" onchange="updateDataPoint(${i}, 'category', this.value)"></td>
-                    <td>
-                        <button class="delete-btn" onclick="deleteDataPoint(${i})">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            // Check if data has drift
+            const hasDrift = chartData.some(d => d.hasDrift);
+
+            // Update table headers
+            if (hasDrift) {
+                thead.innerHTML = `
+                    <th>Name</th>
+                    <th style="width: 55px">X1</th>
+                    <th style="width: 55px">Y1</th>
+                    <th style="width: 55px">X2</th>
+                    <th style="width: 55px">Y2</th>
+                    <th style="width: 70px">Category</th>
+                    <th style="width: 30px"></th>
+                `;
+                tbody.innerHTML = chartData.map((d, i) => `
+                    <tr>
+                        <td><input type="text" value="${d.name}" onchange="updateDataPoint(${i}, 'name', this.value)"></td>
+                        <td><input type="number" class="num-input" value="${d.xValue}" onchange="updateDataPoint(${i}, 'xValue', parseFloat(this.value))"></td>
+                        <td><input type="number" class="num-input" value="${d.yValue}" onchange="updateDataPoint(${i}, 'yValue', parseFloat(this.value))"></td>
+                        <td><input type="number" class="num-input" value="${d.x2Value || ''}" onchange="updateDataPoint(${i}, 'x2Value', parseFloat(this.value))"></td>
+                        <td><input type="number" class="num-input" value="${d.y2Value || ''}" onchange="updateDataPoint(${i}, 'y2Value', parseFloat(this.value))"></td>
+                        <td><input type="text" value="${d.category}" onchange="updateDataPoint(${i}, 'category', this.value)"></td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteDataPoint(${i})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                thead.innerHTML = `
+                    <th>Name</th>
+                    <th style="width: 65px">X</th>
+                    <th style="width: 65px">Y</th>
+                    <th style="width: 80px">Category</th>
+                    <th style="width: 30px"></th>
+                `;
+                tbody.innerHTML = chartData.map((d, i) => `
+                    <tr>
+                        <td><input type="text" value="${d.name}" onchange="updateDataPoint(${i}, 'name', this.value)"></td>
+                        <td><input type="number" class="num-input" value="${d.xValue}" onchange="updateDataPoint(${i}, 'xValue', parseFloat(this.value))"></td>
+                        <td><input type="number" class="num-input" value="${d.yValue}" onchange="updateDataPoint(${i}, 'yValue', parseFloat(this.value))"></td>
+                        <td><input type="text" value="${d.category}" onchange="updateDataPoint(${i}, 'category', this.value)"></td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteDataPoint(${i})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
         }
 
         function updateDataPoint(index, field, value) {
@@ -1642,9 +1872,23 @@
             config.thresholdLineColor = document.getElementById('thresholdLineColor').value;
             config.quadrantLabelSize = parseInt(document.getElementById('quadrantLabelSize').value) || 13;
 
+            // Drift settings
+            config.driftMode = document.getElementById('driftMode').checked;
+            config.driftStartLabel = document.getElementById('driftStartLabel').value || 'Start';
+            config.driftEndLabel = document.getElementById('driftEndLabel').value || 'End';
+            config.driftColorUp = document.getElementById('driftColorUp').value;
+            config.driftColorDown = document.getElementById('driftColorDown').value;
+            config.showYearBadges = document.getElementById('showYearBadges').checked;
+
             // Show/hide fixed size slider based on size mode
             const fixedSizeGroup = document.getElementById('fixedSizeGroup');
             fixedSizeGroup.style.display = config.sizeMode === 'fixed' ? 'block' : 'none';
+
+            // Show/hide drift options
+            const driftOptions = document.getElementById('driftOptions');
+            const driftInfo = document.getElementById('driftInfo');
+            driftOptions.style.display = config.driftMode ? 'block' : 'none';
+            driftInfo.style.display = config.driftMode ? 'block' : 'none';
 
             // Update display title
             document.getElementById('displayTitle').textContent = config.title;
@@ -1673,8 +1917,20 @@
         function createChart() {
             d3.select('#chart').selectAll('*').remove();
 
-            const xValues = chartData.map(d => d.xValue);
-            const yValues = chartData.map(d => d.yValue);
+            // Check if we have drift data
+            const hasDriftData = chartData.some(d => d.hasDrift && d.x2Value !== undefined);
+            
+            // Get all X and Y values (including drift end points if present)
+            let xValues = chartData.map(d => d.xValue);
+            let yValues = chartData.map(d => d.yValue);
+            
+            if (config.driftMode && hasDriftData) {
+                const x2Values = chartData.filter(d => d.x2Value !== undefined).map(d => d.x2Value);
+                const y2Values = chartData.filter(d => d.y2Value !== undefined).map(d => d.y2Value);
+                xValues = [...xValues, ...x2Values];
+                yValues = [...yValues, ...y2Values];
+            }
+            
             const sizeValues = chartData.map(d => d.sizeValue || d.yValue);
 
             // Calculate bounds
@@ -1859,52 +2115,181 @@
                 return sizeScale(d.yValue);
             };
 
-            // Draw bubbles
+            // Draw bubbles (or drift visualization)
             const tooltip = d3.select('#tooltip');
             const bubbleOpacity = config.bubbleOpacity / 100;
+            const hasDriftData = chartData.some(d => d.hasDrift && d.x2Value !== undefined);
 
-            svg.selectAll('.bubble')
-                .data(chartData)
-                .enter()
-                .append('circle')
-                .attr('class', 'bubble')
-                .attr('cx', d => xScale(d.xValue))
-                .attr('cy', d => yScale(d.yValue))
-                .attr('r', d => getBubbleRadius(d))
-                .attr('fill', d => config.categoryColors[d.category] || defaultColors[0])
-                .attr('fill-opacity', bubbleOpacity)
-                .attr('stroke', config.bubbleStrokeColor)
-                .attr('stroke-width', config.bubbleStrokeWidth)
-                .attr('filter', config.bubbleShadow ? 'url(#bubbleShadow)' : 'none')
-                .style('cursor', 'pointer')
-                .on('mouseover', function(event, d) {
-                    d3.select(this).attr('stroke-width', config.bubbleStrokeWidth + 1);
-                    tooltip.classed('visible', true)
-                        .html(`
-                            <div class="tooltip-title">${d.name}</div>
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">Category:</span>
-                                <span class="tooltip-value">${d.category}</span>
-                            </div>
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">${config.xAxisLabel}:</span>
-                                <span class="tooltip-value">${d.xValue.toFixed(2)}</span>
-                            </div>
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">${config.yAxisLabel}:</span>
-                                <span class="tooltip-value">${d.yValue.toFixed(2)}</span>
-                            </div>
-                        `);
-                })
-                .on('mousemove', function(event) {
-                    const rect = document.querySelector('.chart-container').getBoundingClientRect();
-                    tooltip.style('left', (event.clientX - rect.left + 15) + 'px')
-                           .style('top', (event.clientY - rect.top - 10) + 'px');
-                })
-                .on('mouseout', function() {
-                    d3.select(this).attr('stroke-width', config.bubbleStrokeWidth);
-                    tooltip.classed('visible', false);
+            if (config.driftMode && hasDriftData) {
+                // DRIFT MODE: Draw arrows and connected dots
+                const driftGroups = svg.selectAll('.drift-group')
+                    .data(chartData.filter(d => d.hasDrift))
+                    .enter()
+                    .append('g')
+                    .attr('class', 'drift-group');
+
+                // Draw connecting arrow lines
+                driftGroups.each(function(d) {
+                    const group = d3.select(this);
+                    const x1 = xScale(d.xValue);
+                    const y1 = yScale(d.yValue);
+                    const x2 = xScale(d.x2Value);
+                    const y2 = yScale(d.y2Value);
+
+                    // Determine drift direction color (based on Y improvement)
+                    const yImproved = d.y2Value > d.yValue;
+                    const driftColor = yImproved ? config.driftColorUp : config.driftColorDown;
+
+                    // Draw arrow line
+                    group.append('line')
+                        .attr('class', 'drift-line')
+                        .attr('x1', x1)
+                        .attr('y1', y1)
+                        .attr('x2', x2)
+                        .attr('y2', y2)
+                        .attr('stroke', driftColor)
+                        .attr('stroke-width', 2)
+                        .attr('stroke-dasharray', '6,3')
+                        .attr('opacity', 0.7);
+
+                    // Draw arrowhead
+                    const angle = Math.atan2(y2 - y1, x2 - x1);
+                    const arrowSize = 8;
+                    group.append('polygon')
+                        .attr('class', 'drift-arrow')
+                        .attr('points', `0,-${arrowSize/2} ${arrowSize},0 0,${arrowSize/2}`)
+                        .attr('transform', `translate(${x2},${y2}) rotate(${angle * 180 / Math.PI})`)
+                        .attr('fill', driftColor)
+                        .attr('opacity', 0.8);
                 });
+
+                // Draw end dots (hollow - future/predicted)
+                driftGroups.append('circle')
+                    .attr('class', 'dot-end')
+                    .attr('cx', d => xScale(d.x2Value))
+                    .attr('cy', d => yScale(d.y2Value))
+                    .attr('r', d => getBubbleRadius(d) * 0.9)
+                    .attr('fill', 'white')
+                    .attr('stroke', d => config.categoryColors[d.category] || defaultColors[d.index % defaultColors.length])
+                    .attr('stroke-width', 2)
+                    .attr('filter', config.bubbleShadow ? 'url(#bubbleShadow)' : 'none')
+                    .attr('opacity', 0.5);
+
+                // Draw start dots (filled - current/actual)
+                driftGroups.append('circle')
+                    .attr('class', 'dot-start')
+                    .attr('cx', d => xScale(d.xValue))
+                    .attr('cy', d => yScale(d.yValue))
+                    .attr('r', d => getBubbleRadius(d))
+                    .attr('fill', d => config.categoryColors[d.category] || defaultColors[d.index % defaultColors.length])
+                    .attr('fill-opacity', bubbleOpacity)
+                    .attr('stroke', config.bubbleStrokeColor)
+                    .attr('stroke-width', config.bubbleStrokeWidth)
+                    .attr('filter', config.bubbleShadow ? 'url(#bubbleShadow)' : 'none')
+                    .attr('opacity', 0.95)
+                    .style('cursor', 'pointer')
+                    .on('mouseover', function(event, d) {
+                        tooltip.classed('visible', true)
+                            .html(`
+                                <div class="tooltip-title">${d.name}</div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">Category:</span>
+                                    <span class="tooltip-value">${d.category}</span>
+                                </div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">${config.driftStartLabel} X:</span>
+                                    <span class="tooltip-value">${d.xValue.toFixed(2)}</span>
+                                </div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">${config.driftStartLabel} Y:</span>
+                                    <span class="tooltip-value">${d.yValue.toFixed(2)}</span>
+                                </div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">${config.driftEndLabel} X:</span>
+                                    <span class="tooltip-value">${d.x2Value.toFixed(2)}</span>
+                                </div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">${config.driftEndLabel} Y:</span>
+                                    <span class="tooltip-value">${d.y2Value.toFixed(2)}</span>
+                                </div>
+                            `);
+                    })
+                    .on('mousemove', function(event) {
+                        const rect = document.querySelector('.chart-container').getBoundingClientRect();
+                        tooltip.style('left', (event.clientX - rect.left + 15) + 'px')
+                               .style('top', (event.clientY - rect.top - 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        tooltip.classed('visible', false);
+                    });
+
+                // Add year badges if enabled
+                if (config.showYearBadges) {
+                    driftGroups.append('text')
+                        .attr('class', 'year-badge')
+                        .attr('x', d => xScale(d.xValue))
+                        .attr('y', d => yScale(d.yValue) - getBubbleRadius(d) - 4)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', '9px')
+                        .attr('font-weight', '700')
+                        .attr('fill', '#1e293b')
+                        .text(config.driftStartLabel);
+
+                    driftGroups.append('text')
+                        .attr('class', 'year-badge')
+                        .attr('x', d => xScale(d.x2Value))
+                        .attr('y', d => yScale(d.y2Value) - getBubbleRadius(d) * 0.9 - 4)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', '9px')
+                        .attr('font-weight', '600')
+                        .attr('fill', '#94a3b8')
+                        .text(config.driftEndLabel);
+                }
+            } else {
+                // STANDARD MODE: Draw regular bubbles
+                svg.selectAll('.bubble')
+                    .data(chartData)
+                    .enter()
+                    .append('circle')
+                    .attr('class', 'bubble')
+                    .attr('cx', d => xScale(d.xValue))
+                    .attr('cy', d => yScale(d.yValue))
+                    .attr('r', d => getBubbleRadius(d))
+                    .attr('fill', d => config.categoryColors[d.category] || defaultColors[0])
+                    .attr('fill-opacity', bubbleOpacity)
+                    .attr('stroke', config.bubbleStrokeColor)
+                    .attr('stroke-width', config.bubbleStrokeWidth)
+                    .attr('filter', config.bubbleShadow ? 'url(#bubbleShadow)' : 'none')
+                    .style('cursor', 'pointer')
+                    .on('mouseover', function(event, d) {
+                        d3.select(this).attr('stroke-width', config.bubbleStrokeWidth + 1);
+                        tooltip.classed('visible', true)
+                            .html(`
+                                <div class="tooltip-title">${d.name}</div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">Category:</span>
+                                    <span class="tooltip-value">${d.category}</span>
+                                </div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">${config.xAxisLabel}:</span>
+                                    <span class="tooltip-value">${d.xValue.toFixed(2)}</span>
+                                </div>
+                                <div class="tooltip-row">
+                                    <span class="tooltip-label">${config.yAxisLabel}:</span>
+                                    <span class="tooltip-value">${d.yValue.toFixed(2)}</span>
+                                </div>
+                            `);
+                    })
+                    .on('mousemove', function(event) {
+                        const rect = document.querySelector('.chart-container').getBoundingClientRect();
+                        tooltip.style('left', (event.clientX - rect.left + 15) + 'px')
+                               .style('top', (event.clientY - rect.top - 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        d3.select(this).attr('stroke-width', config.bubbleStrokeWidth);
+                        tooltip.classed('visible', false);
+                    });
+            }
 
             // Draw labels
             if (config.showLabels) {
