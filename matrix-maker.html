@@ -895,6 +895,69 @@
         .btn-reset:hover {
             background: rgba(239,68,68,0.2);
         }
+
+        /* Import/Paste Styles */
+        .paste-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #64748b;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(102,126,234,0.08);
+            border: 1px dashed rgba(102,126,234,0.3);
+        }
+
+        .paste-hint svg {
+            color: #667eea;
+        }
+
+        .data-table-container.paste-ready {
+            border: 2px dashed #667eea;
+            background: rgba(102,126,234,0.03);
+        }
+
+        .data-table-container.paste-ready .data-table-wrapper {
+            background: rgba(102,126,234,0.02);
+        }
+
+        .import-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .import-toast.visible {
+            opacity: 1;
+        }
+
+        .import-toast.success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+
+        .import-toast.error {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+
+        .import-toast svg {
+            width: 18px;
+            height: 18px;
+        }
     </style>
 </head>
 <body>
@@ -1067,6 +1130,22 @@
                             </svg>
                             Add Point
                         </button>
+                        <button class="btn btn-secondary" id="uploadCsvBtn" style="display:none">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Upload CSV
+                        </button>
+                        <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" hidden>
+                        <div class="paste-hint" id="pasteHint" style="display:none">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                            </svg>
+                            Paste data (Ctrl+V)
+                        </div>
                     </div>
                 </div>
                 <div class="data-table-wrapper">
@@ -1190,6 +1269,14 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- Import Toast Notification -->
+    <div class="import-toast" id="importToast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="importToastText">Data imported successfully</span>
     </div>
 
     <script>
@@ -3805,6 +3892,16 @@
             resetViewBtn.style.display = editMode && hasUnsavedChanges ? 'flex' : 'none';
             addRowBtn.style.display = editMode ? 'flex' : 'none';
             
+            const uploadBtn = document.getElementById('uploadCsvBtn');
+            const pasteHintEl = document.getElementById('pasteHint');
+            if (uploadBtn) uploadBtn.style.display = editMode ? 'flex' : 'none';
+            if (pasteHintEl) pasteHintEl.style.display = editMode ? 'flex' : 'none';
+            
+            const dataTableContainer = document.getElementById('dataTableContainer');
+            if (dataTableContainer) {
+                dataTableContainer.classList.toggle('paste-ready', editMode);
+            }
+            
             if (editMode) {
                 // Initialize editedData from currentData
                 editedData = JSON.parse(JSON.stringify(currentData));
@@ -4334,6 +4431,180 @@
                 enableChartEditing();
             }
         }
+
+        // ========================================
+        // CSV IMPORT FUNCTIONALITY
+        // ========================================
+
+        const uploadCsvBtn = document.getElementById('uploadCsvBtn');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const pasteHint = document.getElementById('pasteHint');
+        const importToast = document.getElementById('importToast');
+        const importToastText = document.getElementById('importToastText');
+
+        function parseCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            if (lines.length < 2) return [];
+
+            const firstLine = lines[0];
+            const delimiter = firstLine.includes('\t') ? '\t' : ',';
+
+            const parseRow = (row) => {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < row.length; i++) {
+                    const char = row[i];
+                    
+                    if (char === '"' && !inQuotes) {
+                        inQuotes = true;
+                    } else if (char === '"' && inQuotes) {
+                        if (row[i + 1] === '"') {
+                            current += '"';
+                            i++;
+                        } else {
+                            inQuotes = false;
+                        }
+                    } else if (char === delimiter && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            };
+
+            const headerRow = parseRow(lines[0]);
+            const headers = headerRow.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+            const columnMap = {
+                name: headers.findIndex(h => h.includes('name') || h.includes('category') || h.includes('product')),
+                cagr: headers.findIndex(h => h.includes('cagr') || h.includes('growth') || h.includes('rate')),
+                engagement: headers.findIndex(h => h.includes('engagement') || h.includes('eng') || h.includes('value') || h.includes('size')),
+                needState: headers.findIndex(h => h.includes('need') || h.includes('state') || h.includes('segment') || h.includes('type'))
+            };
+
+            if (columnMap.name === -1) columnMap.name = 0;
+            if (columnMap.cagr === -1) columnMap.cagr = 1;
+            if (columnMap.engagement === -1) columnMap.engagement = 2;
+
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const values = parseRow(lines[i]);
+                const name = values[columnMap.name]?.trim();
+                const cagr = parseFloat(values[columnMap.cagr]);
+                const engagement = parseFloat(values[columnMap.engagement]);
+                const needState = columnMap.needState !== -1 ? values[columnMap.needState]?.trim() : 'Other';
+
+                if (name && !isNaN(cagr) && !isNaN(engagement)) {
+                    data.push({
+                        name,
+                        cagr,
+                        engagement,
+                        needState: needState || 'Other',
+                        index: data.length
+                    });
+                }
+            }
+
+            return data;
+        }
+
+        function isTabularData(text) {
+            const lines = text.trim().split(/\r?\n/);
+            if (lines.length < 2) return false;
+            
+            const hasDelimiter = lines[0].includes('\t') || lines[0].includes(',');
+            const columnCount = (lines[0].match(/\t/g) || lines[0].match(/,/g) || []).length;
+            
+            return hasDelimiter && columnCount >= 1;
+        }
+
+        function showImportToast(message, isError = false) {
+            importToastText.textContent = message;
+            importToast.classList.remove('success', 'error');
+            importToast.classList.add(isError ? 'error' : 'success');
+            importToast.classList.add('visible');
+            
+            const svg = importToast.querySelector('svg');
+            if (isError) {
+                svg.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+            } else {
+                svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+            }
+            
+            setTimeout(() => {
+                importToast.classList.remove('visible');
+            }, 3000);
+        }
+
+        function importData(parsedData, replaceExisting = true) {
+            if (!parsedData || parsedData.length === 0) {
+                showImportToast('No valid data found to import', true);
+                return;
+            }
+
+            if (replaceExisting) {
+                svg.selectAll('.bubble-group').remove();
+                svg.selectAll('.label-group').remove();
+                editedData = [];
+            }
+
+            parsedData.forEach((item, i) => {
+                item.index = editedData.length + i;
+                editedData.push(item);
+                addNewBubbleToChart(item);
+            });
+
+            hasUnsavedChanges = true;
+            resetViewBtn.style.display = 'flex';
+            renderDataTable();
+            updateStats(editedData);
+
+            showImportToast(`Successfully imported ${parsedData.length} data points`);
+        }
+
+        uploadCsvBtn.addEventListener('click', () => {
+            csvFileInput.click();
+        });
+
+        csvFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const parsedData = parseCSV(text);
+                importData(parsedData);
+            } catch (error) {
+                console.error('Error reading CSV:', error);
+                showImportToast('Failed to read CSV file', true);
+            }
+
+            csvFileInput.value = '';
+        });
+
+        document.addEventListener('paste', (e) => {
+            if (!editMode) return;
+            
+            const activeElement = document.activeElement;
+            if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            const text = e.clipboardData.getData('text');
+            
+            if (isTabularData(text)) {
+                e.preventDefault();
+                const parsedData = parseCSV(text);
+                importData(parsedData);
+            }
+        });
 
         // ========================================
         // SAVE/LOAD VIEW FUNCTIONALITY
